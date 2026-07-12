@@ -6,15 +6,24 @@ Multi-user task tracker for office teams and personal productivity: auth, worksp
 
 | | |
 |--|--|
-| **GitHub Pages (share with team)** | https://ritchegerona.github.io/chietask/ |
-| **Browser demo (no install)** | https://ritchegerona.github.io/chietask/demo.html |
+| **GitHub Pages home** | https://ritchegerona.github.io/chietask/ |
+| **👥 Teammates (pure web, no install)** | https://ritchegerona.github.io/chietask/team.html |
+| **Sandbox demo** | https://ritchegerona.github.io/chietask/demo.html |
 | **Docs** | https://ritchegerona.github.io/chietask/docs.html |
 | **Install full multi-user SaaS** | https://ritchegerona.github.io/chietask/install.html |
 | **Source repo** | https://github.com/ritchegerona/chietask |
 
-**Full documentation (in repo):** [DOCUMENTATION.md](./DOCUMENTATION.md)
+### Share with office mates (recommended)
 
-> **Note:** GitHub Pages hosts the **static demo + docs**. The full multi-user SaaS (login, workspaces, API) still runs with Python/Docker locally — see Install.
+Send only this link — open in a browser, no install:
+
+```
+https://ritchegerona.github.io/chietask/team.html
+```
+
+Tasks save in each person’s browser on that device. For shared server accounts/workspaces, use the full SaaS install instead.
+
+**Full documentation (in repo):** [DOCUMENTATION.md](./DOCUMENTATION.md)
 ---
 
 ## Requirements (dependencies)
