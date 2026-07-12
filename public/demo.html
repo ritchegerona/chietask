@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChieTask Demo — Browser Task Tracker</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script>
+    (function () {
+      var p = localStorage.getItem("chie_palette") || "ocean";
+      var m = localStorage.getItem("chie_theme") || "light";
+      document.documentElement.setAttribute("data-palette", p);
+      document.documentElement.setAttribute("data-mode", m === "dark" ? "dark" : "light");
+      if (m === "dark") document.documentElement.setAttribute("data-theme", "dark");
+    })();
+  </script>
+  <style>
+    body.demo-body { min-height: 100vh; margin: 0; background: var(--bg); color: var(--text); }
+    .demo-bar {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;
+      padding: 12px 18px; border-bottom: 1px solid var(--border);
+      background: color-mix(in srgb, var(--card) 92%, transparent);
+      position: sticky; top: 0; z-index: 20;
+    }
+    .demo-bar .left { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .demo-note { font-size: 12px; color: var(--text-light); max-width: 420px; }
+    .demo-layout {
+      display: grid; grid-template-columns: 220px 1fr 280px; gap: 0;
+      min-height: calc(100vh - 56px);
+    }
+    @media (max-width: 900px) {
+      .demo-layout { grid-template-columns: 1fr; }
+      .demo-side, .demo-right { display: none; }
+      .demo-side.open, .demo-right.open { display: block; }
+    }
+    .demo-side, .demo-right {
+      border-right: 1px solid var(--border); padding: 16px;
+      background: color-mix(in srgb, var(--card) 90%, transparent);
+    }
+    .demo-right { border-right: none; border-left: 1px solid var(--border); }
+    .demo-main { padding: 18px; overflow-y: auto; }
+    .demo-side h3, .demo-right h3 {
+      font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+      color: var(--text-light); margin: 0 0 10px;
+    }
+    .filter-btn {
+      display: flex; align-items: center; gap: 8px; width: 100%;
+      border: none; background: transparent; color: var(--text);
+      padding: 8px 10px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 13px; text-align: left;
+    }
+    .filter-btn.active, .filter-btn:hover { background: var(--mint-soft); }
+    .filter-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .composer {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+      padding: 12px; border: 1px solid var(--border); border-radius: 14px;
+      background: var(--card);
+    }
+    .composer input[type="text"], .composer select, .composer input[type="date"] {
+      padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--border);
+      background: var(--bg); color: var(--text); font: inherit; font-size: 13px;
+    }
+    .composer input[type="text"] { flex: 1; min-width: 160px; }
+    .composer .add-btn {
+      border: none; border-radius: 10px; padding: 10px 18px; font-weight: 700;
+      background: var(--accent-grad, var(--mint)); color: #fff; cursor: pointer; font: inherit;
+    }
+    .task-card {
+      border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px;
+      background: var(--card); margin-bottom: 10px; border-left: 3px solid var(--mint);
+    }
+    .task-card.completed .task-name { text-decoration: line-through; color: var(--text-light); }
+    .task-card.is-timing { border-color: color-mix(in srgb, var(--mint) 55%, var(--border)); }
+    .task-row { display: flex; gap: 10px; align-items: center; }
+    .task-info { flex: 1; min-width: 0; }
+    .task-name { font-weight: 600; font-size: 14px; }
+    .task-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .tag { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; }
+    .tag-cat { border: 1px solid var(--border); }
+    .tag-priority { color: #fff; }
+    .tag-live { color: #dc2626; background: color-mix(in srgb, #ef4444 16%, transparent); }
+    .timer-display { font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 700; color: var(--mint-dark); min-width: 56px; text-align: right; }
+    .timer-btn, .icon-mini {
+      border: 1px solid var(--border); background: var(--bg); border-radius: 8px;
+      width: 34px; height: 34px; cursor: pointer; font-size: 14px;
+    }
+    .timer-btn.running { background: var(--mint-soft); border-color: var(--mint); }
+    .empty { text-align: center; padding: 40px 16px; color: var(--text-light); }
+    .log-item { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .log-item:last-child { border-bottom: none; }
+    .stat { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; }
+    .view-tabs { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+    .view-tab { border: none; background: var(--card); color: var(--text-light); padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .view-tab.active { background: var(--mint); color: #fff; }
+    .top-line { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  </style>
+</head>
+<body class="demo-body" data-palette="ocean" data-mode="light">
+  <div class="demo-bar">
+    <div class="left">
+      <strong>📋 ChieTask Demo</strong>
+      <span class="demo-note">Browser-only · data stays on this device (localStorage). For multi-user SaaS see Install.</span>
+    </div>
+    <div class="left">
+      <button type="button" class="btn btn-ghost btn-sm" id="btnTheme">🌓 Theme</button>
+      <a class="btn btn-ghost btn-sm" href="./">Home</a>
+      <a class="btn btn-primary btn-sm" href="./install.html">Full SaaS install</a>
+    </div>
+  </div>
+
+  <div class="demo-layout">
+    <aside class="demo-side">
+      <h3>Categories</h3>
+      <div id="catFilters"></div>
+      <button type="button" class="filter-btn" id="btnAddCat" style="margin-top:8px;">+ New category</button>
+      <h3 style="margin-top:20px;">Priority</h3>
+      <button type="button" class="filter-btn" data-prio="urgent"><span class="filter-dot" style="background:var(--urgent)"></span>Urgent</button>
+      <button type="button" class="filter-btn" data-prio="high"><span class="filter-dot" style="background:var(--high)"></span>High</button>
+      <button type="button" class="filter-btn" data-prio="normal"><span class="filter-dot" style="background:var(--normal)"></span>Normal</button>
+      <button type="button" class="filter-btn" data-prio="low"><span class="filter-dot" style="background:var(--low)"></span>Low</button>
+    </aside>
+
+    <main class="demo-main">
+      <div class="top-line">
+        <div class="view-tabs">
+          <button type="button" class="view-tab active" data-view="pending">Pending</button>
+          <button type="button" class="view-tab" data-view="completed">Done</button>
+          <button type="button" class="view-tab" data-view="all">All</button>
+        </div>
+        <input type="search" id="search" placeholder="Search…" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font:inherit;font-size:13px;min-width:160px;" autocomplete="off">
+      </div>
+
+      <div class="composer">
+        <input type="text" id="taskText" placeholder="New work task…" autocomplete="off" data-lpignore="true">
+        <select id="taskCat"></select>
+        <select id="taskPrio">
+          <option value="normal">Normal</option>
+          <option value="urgent">Urgent</option>
+          <option value="high">High</option>
+          <option value="low">Low</option>
+        </select>
+        <input type="date" id="taskDue" title="Due date">
+        <button type="button" class="add-btn" id="btnAdd">+ Add</button>
+      </div>
+
+      <div id="taskList"></div>
+    </main>
+
+    <aside class="demo-right">
+      <h3>Today</h3>
+      <div class="stat"><span>Hours (open + done today)</span><strong id="statHours">0m 0s</strong></div>
+      <div class="stat"><span>Done today</span><strong id="statDone">0</strong></div>
+      <div class="stat"><span>Pending</span><strong id="statPending">0</strong></div>
+      <div class="stat"><span>Live timers</span><strong id="statLive">0</strong></div>
+      <h3 style="margin-top:18px;">Work log</h3>
+      <div id="workLog"></div>
+      <button type="button" class="btn btn-ghost btn-sm" id="btnExport" style="margin-top:14px;width:100%;">Export CSV</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btnClearDone" style="margin-top:8px;width:100%;">Clear completed</button>
+    </aside>
+  </div>
+
+  <script>
+(function () {
+  const KEY = "chietask_pages_demo_v1";
+  const DEFAULT_CATS = [
+    { name: "General", color: "#4f8cff" },
+    { name: "Meetings", color: "#89c4e8" },
+    { name: "Reports", color: "#f4d4a7" },
+    { name: "Admin", color: "#94a3b8" },
+    { name: "Client", color: "#e895a8" },
+  ];
+  const state = {
+    tasks: [],
+    categories: [],
+    view: "pending",
+    filterCategory: "all",
+    filterPriority: null,
+    search: "",
+    activeTimers: new Set(),
+    timerInterval: null,
+  };
+
+  function load() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (raw && Array.isArray(raw.tasks)) {
+        state.tasks = raw.tasks;
+        state.categories = raw.categories && raw.categories.length ? raw.categories : DEFAULT_CATS.slice();
+        return;
+      }
+    } catch (_) {}
+    state.categories = DEFAULT_CATS.slice();
+    state.tasks = [];
+  }
+  function save() {
+    localStorage.setItem(KEY, JSON.stringify({
+      tasks: state.tasks,
+      categories: state.categories,
+    }));
+  }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function esc(s) {
+    return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+  function formatTime(sec) {
+    sec = sec || 0;
+    const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    return h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`;
+  }
+  function localDay(d) {
+    const x = d instanceof Date ? d : new Date(d || Date.now());
+    if (Number.isNaN(x.getTime())) return String(d || "").slice(0, 10);
+    return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`;
+  }
+  function prioColor(p) {
+    return ({ urgent: "var(--urgent)", high: "var(--high)", normal: "var(--normal)", low: "var(--low)" })[p] || "var(--normal)";
+  }
+  function catColor(name) {
+    const c = state.categories.find((x) => x.name === name);
+    return c?.color || "var(--mint)";
+  }
+  function isRunning(id) { return state.activeTimers.has(id); }
+
+  function filtered() {
+    let list = state.tasks.slice();
+    if (state.view === "pending") list = list.filter((t) => !t.completed);
+    else if (state.view === "completed") list = list.filter((t) => t.completed);
+    if (state.filterCategory !== "all") list = list.filter((t) => t.category === state.filterCategory);
+    if (state.filterPriority) list = list.filter((t) => t.priority === state.filterPriority);
+    const q = state.search.trim().toLowerCase();
+    if (q) list = list.filter((t) => (t.text + " " + (t.category||"") + " " + (t.notes||"")).toLowerCase().includes(q));
+    const order = { urgent: 0, high: 1, normal: 2, low: 3 };
+    list.sort((a, b) => {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      return (order[a.priority]||2) - (order[b.priority]||2);
+    });
+    return list;
+  }
+
+  function renderCats() {
+    const box = document.getElementById("catFilters");
+    let html = `<button type="button" class="filter-btn ${state.filterCategory==="all"&&!state.filterPriority?"active":""}" data-cat="all"><span class="filter-dot" style="background:var(--mint)"></span>All</button>`;
+    for (const c of state.categories) {
+      html += `<button type="button" class="filter-btn ${state.filterCategory===c.name?"active":""}" data-cat="${esc(c.name)}"><span class="filter-dot" style="background:${esc(c.color)}"></span>${esc(c.name)}</button>`;
+    }
+    box.innerHTML = html;
+    box.querySelectorAll("[data-cat]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        state.filterCategory = btn.dataset.cat;
+        state.filterPriority = null;
+        document.querySelectorAll("[data-prio]").forEach((b) => b.classList.remove("active"));
+        render();
+      });
+    });
+    const sel = document.getElementById("taskCat");
+    const prev = sel.value;
+    sel.innerHTML = state.categories.map((c) => `<option value="${esc(c.name)}">${esc(c.name)}</option>`).join("");
+    if (prev && state.categories.some((c) => c.name === prev)) sel.value = prev;
+  }
+
+  function renderList() {
+    const list = filtered();
+    const box = document.getElementById("taskList");
+    if (!list.length) {
+      box.innerHTML = `<div class="empty">No tasks here — add one above</div>`;
+      return;
+    }
+    box.innerHTML = list.map((t) => {
+      const run = isRunning(t.id);
+      const col = catColor(t.category);
+      return `<div class="task-card priority-${esc(t.priority)} ${t.completed?"completed":""} ${run?"is-timing":""}" data-id="${t.id}">
+        <div class="task-row">
+          <input type="checkbox" class="task-check" data-id="${t.id}" ${t.completed?"checked":""}>
+          <div class="task-info">
+            <div class="task-name">${esc(t.text)}</div>
+            <div class="task-meta">
+              <span class="tag tag-cat" style="border-color:${esc(col)};color:${esc(col)}">${esc(t.category)}</span>
+              <span class="tag tag-priority" style="background:${prioColor(t.priority)}">${esc(t.priority)}</span>
+              ${t.due_date ? `<span class="tag tag-cat">📅 ${esc(t.due_date)}</span>` : ""}
+              ${run ? `<span class="tag tag-live">● LIVE</span>` : ""}
+            </div>
+          </div>
+          <div class="timer-display" id="timer-${t.id}">${formatTime(t.time_spent)}</div>
+          ${!t.completed ? `<button type="button" class="timer-btn ${run?"running":""}" data-timer="${t.id}" title="${run?"Pause":"Start"}">${run?"⏸":"▶"}</button>` : ""}
+          <button type="button" class="icon-mini" data-del="${t.id}" title="Delete">🗑</button>
+        </div>
+      </div>`;
+    }).join("");
+
+    box.querySelectorAll(".task-check").forEach((el) => {
+      el.addEventListener("change", () => toggleComplete(el.dataset.id));
+    });
+    box.querySelectorAll("[data-timer]").forEach((el) => {
+      el.addEventListener("click", () => toggleTimer(el.dataset.timer));
+    });
+    box.querySelectorAll("[data-del]").forEach((el) => {
+      el.addEventListener("click", () => deleteTask(el.dataset.del));
+    });
+  }
+
+  function renderStats() {
+    const today = localDay();
+    const pending = state.tasks.filter((t) => !t.completed).length;
+    const doneToday = state.tasks.filter((t) => t.completed && t.completed_at && localDay(t.completed_at) === today).length;
+    let secs = 0;
+    state.tasks.forEach((t) => {
+      if (!t.completed) secs += t.time_spent || 0;
+      else if (t.completed_at && localDay(t.completed_at) === today) secs += t.time_spent || 0;
+    });
+    document.getElementById("statHours").textContent = formatTime(secs);
+    document.getElementById("statDone").textContent = String(doneToday);
+    document.getElementById("statPending").textContent = String(pending);
+    document.getElementById("statLive").textContent = String(state.activeTimers.size);
+
+    const logItems = state.tasks.filter((t) => {
+      const run = isRunning(t.id);
+      if (t.completed && t.completed_at) return localDay(t.completed_at) === today;
+      return run || (t.time_spent || 0) > 0;
+    }).sort((a, b) => (isRunning(b.id)?1:0) - (isRunning(a.id)?1:0) || (b.time_spent||0)-(a.time_spent||0));
+
+    document.getElementById("workLog").innerHTML = logItems.length
+      ? logItems.map((t) => `<div class="log-item"><span>${isRunning(t.id)?"● ":t.completed?"✓ ":""}${esc(t.text)}</span><strong id="wlog-${t.id}">${formatTime(t.time_spent||0)}</strong></div>`).join("")
+      : `<div style="color:var(--text-light);font-size:12px;font-style:italic;">No timed work yet</div>`;
+  }
+
+  function render() {
+    renderCats();
+    renderList();
+    renderStats();
+    document.querySelectorAll(".view-tab").forEach((t) => t.classList.toggle("active", t.dataset.view === state.view));
+  }
+
+  function addTask() {
+    const text = document.getElementById("taskText").value.trim();
+    if (!text) return;
+    const category = document.getElementById("taskCat").value || "General";
+    if (!state.categories.some((c) => c.name === category)) {
+      state.categories.push({ name: category, color: "#4f8cff" });
+    }
+    const task = {
+      id: uid(),
+      text,
+      category,
+      priority: document.getElementById("taskPrio").value || "normal",
+      due_date: document.getElementById("taskDue").value || null,
+      completed: false,
+      progress: 0,
+      time_spent: 0,
+      notes: "",
+      completed_at: null,
+      created_at: new Date().toISOString(),
+    };
+    state.tasks.unshift(task);
+    document.getElementById("taskText").value = "";
+    document.getElementById("taskDue").value = "";
+    state.view = "pending";
+    startTimer(task.id);
+    save();
+    render();
+  }
+
+  function toggleComplete(id) {
+    const t = state.tasks.find((x) => x.id === id);
+    if (!t) return;
+    if (isRunning(id)) stopTimer(id, true);
+    t.completed = !t.completed;
+    t.completed_at = t.completed ? new Date().toISOString() : null;
+    if (t.completed) t.progress = 100;
+    // Stay on current view — completed leave pending list only
+    save();
+    render();
+  }
+
+  function deleteTask(id) {
+    if (!confirm("Delete this task?")) return;
+    if (isRunning(id)) stopTimer(id, true);
+    state.tasks = state.tasks.filter((t) => t.id !== id);
+    save();
+    render();
+  }
+
+  function ensureLoop() {
+    if (state.timerInterval) return;
+    state.timerInterval = setInterval(() => {
+      if (!state.activeTimers.size) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+        return;
+      }
+      for (const id of [...state.activeTimers]) {
+        const t = state.tasks.find((x) => x.id === id);
+        if (!t || t.completed) { state.activeTimers.delete(id); continue; }
+        t.time_spent = (t.time_spent || 0) + 1;
+        const el = document.getElementById("timer-" + id);
+        if (el) el.textContent = formatTime(t.time_spent);
+        const wl = document.getElementById("wlog-" + id);
+        if (wl) wl.textContent = formatTime(t.time_spent);
+      }
+      if (Date.now() % 5000 < 1100) { save(); renderStats(); }
+      if (!state.activeTimers.size) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+        render();
+      }
+    }, 1000);
+  }
+
+  function startTimer(id) {
+    const t = state.tasks.find((x) => x.id === id);
+    if (!t || t.completed) return;
+    state.activeTimers.add(id);
+    ensureLoop();
+    save();
+    render();
+  }
+  function stopTimer(id, silent) {
+    state.activeTimers.delete(id);
+    if (!state.activeTimers.size && state.timerInterval) {
+      clearInterval(state.timerInterval);
+      state.timerInterval = null;
+    }
+    save();
+    if (!silent) render();
+  }
+  function toggleTimer(id) {
+    if (isRunning(id)) stopTimer(id);
+    else startTimer(id);
+  }
+
+  document.getElementById("btnAdd").addEventListener("click", addTask);
+  document.getElementById("taskText").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") addTask();
+  });
+  document.querySelectorAll(".view-tab").forEach((tab) => {
+    tab.addEventListener("click", () => { state.view = tab.dataset.view; render(); });
+  });
+  document.querySelectorAll("[data-prio]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.filterPriority = btn.dataset.prio;
+      state.filterCategory = "all";
+      document.querySelectorAll("[data-prio]").forEach((b) => b.classList.toggle("active", b === btn));
+      render();
+    });
+  });
+  document.getElementById("search").addEventListener("input", (e) => {
+    state.search = e.target.value;
+    renderList();
+  });
+  document.getElementById("btnAddCat").addEventListener("click", () => {
+    const name = prompt("New category name:");
+    if (!name || !name.trim()) return;
+    if (state.categories.some((c) => c.name === name.trim())) return alert("Already exists");
+    const colors = ["#4f8cff","#3dcf9a","#f97316","#a78bfa","#f07178","#45c4e6"];
+    state.categories.push({ name: name.trim(), color: colors[state.categories.length % colors.length] });
+    save();
+    render();
+  });
+  document.getElementById("btnTheme").addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-mode") || "light";
+    const next = cur === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-mode", next);
+    document.body.setAttribute("data-mode", next);
+    if (next === "dark") document.documentElement.setAttribute("data-theme", "dark");
+    else document.documentElement.removeAttribute("data-theme");
+    localStorage.setItem("chie_theme", next);
+  });
+  document.getElementById("btnExport").addEventListener("click", () => {
+    const rows = [["Task","Category","Priority","Status","Time","Due"]];
+    state.tasks.forEach((t) => rows.push([
+      t.text, t.category, t.priority, t.completed?"Done":"Pending", formatTime(t.time_spent||0), t.due_date||""
+    ]));
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = `chietask-demo-${localDay()}.csv`;
+    a.click();
+  });
+  document.getElementById("btnClearDone").addEventListener("click", () => {
+    if (!confirm("Remove all completed tasks from this browser?")) return;
+    state.tasks = state.tasks.filter((t) => !t.completed);
+    save();
+    render();
+  });
+  window.addEventListener("beforeunload", () => save());
+
+  // sync body attrs for CSS
+  document.body.setAttribute("data-palette", document.documentElement.getAttribute("data-palette") || "ocean");
+  document.body.setAttribute("data-mode", document.documentElement.getAttribute("data-mode") || "light");
+
+  load();
+  render();
+})();
+  </script>
+</body>
+</html>

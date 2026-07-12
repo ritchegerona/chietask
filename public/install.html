@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Install · ChieTask</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script>
+    (function () {
+      var p = localStorage.getItem("chie_palette") || "ocean";
+      var m = localStorage.getItem("chie_theme") || "light";
+      document.documentElement.setAttribute("data-palette", p);
+      document.documentElement.setAttribute("data-mode", m === "dark" ? "dark" : "light");
+    })();
+  </script>
+  <style>
+    .doc-wrap { max-width: 820px; margin: 0 auto; padding: 32px 20px 64px; }
+    .doc-wrap h1 { font-size: 28px; margin-bottom: 8px; }
+    .doc-wrap h2 { font-size: 18px; margin: 28px 0 10px; color: var(--mint-dark); }
+    .doc-wrap p, .doc-wrap li { color: var(--text); line-height: 1.55; font-size: 14px; }
+    .doc-wrap code, .doc-wrap pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12.5px;
+    }
+    .doc-wrap pre {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+    .doc-wrap table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+    .doc-wrap th, .doc-wrap td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+    .doc-wrap th { background: var(--bg); }
+    .muted { color: var(--text-light); font-size: 14px; margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="nav-logo" href="./">📋 ChieTask</a>
+    <div class="nav-links">
+      <a href="./demo.html" class="btn btn-ghost btn-sm">Demo</a>
+      <a href="./docs.html" class="btn btn-ghost btn-sm">Docs</a>
+      <a href="./" class="btn btn-primary btn-sm">Home</a>
+    </div>
+  </nav>
+
+  <article class="doc-wrap">
+    <h1>Install & run (full multi-user SaaS)</h1>
+    <p class="muted">The <a href="./demo.html">browser demo</a> needs no install. Use these steps when you want accounts, workspaces, and the API on your machine.</p>
+
+    <h2>1. Requirements</h2>
+    <table>
+      <tr><th>Dependency</th><th>Notes</th></tr>
+      <tr><td>Python 3.10+</td><td>Required</td></tr>
+      <tr><td>pip</td><td>Comes with Python</td></tr>
+      <tr><td>Git</td><td>To clone the repo</td></tr>
+      <tr><td>Modern browser</td><td>Chrome, Firefox, Safari, Edge</td></tr>
+      <tr><td>Docker (optional)</td><td>Alternative to local Python</td></tr>
+    </table>
+
+    <h2>2. Python packages</h2>
+    <p>From <code>backend/requirements.txt</code>:</p>
+    <ul>
+      <li><strong>Runtime:</strong> fastapi, uvicorn, sqlalchemy, python-jose, bcrypt, python-multipart, email-validator, pydantic, pydantic-settings, python-dotenv</li>
+      <li><strong>Tests:</strong> httpx, pytest</li>
+    </ul>
+
+    <h2>3. Clone & install</h2>
+    <pre>git clone https://github.com/ritchegerona/chietask.git
+cd chietask
+python3 -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install --upgrade pip
+pip install -r backend/requirements.txt</pre>
+    <p>Or: <code>make install</code></p>
+
+    <h2>4. Run</h2>
+    <pre>python run.py
+# or: make run
+# open http://localhost:8765</pre>
+    <p>macOS: double-click <code>start.command</code>.</p>
+
+    <h2>5. Docker</h2>
+    <pre>docker compose up --build
+# http://localhost:8765</pre>
+
+    <h2>6. Tests</h2>
+    <pre>pytest backend/tests -q
+# or: make test</pre>
+
+    <h2>7. First use</h2>
+    <ol>
+      <li>Open <code>http://localhost:8765/register</code></li>
+      <li>Create an account (workspace is created automatically)</li>
+      <li>Add tasks, categories, timers</li>
+    </ol>
+
+    <p class="muted" style="margin-top:32px;">More detail: <a href="./docs.html">Full documentation</a> · Source: <a href="https://github.com/ritchegerona/chietask">GitHub</a></p>
+  </article>
+</body>
+</html>

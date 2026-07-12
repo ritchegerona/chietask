@@ -2,10 +2,19 @@
 
 Multi-user task tracker for office teams and personal productivity: auth, workspaces, plans, multi-task timers, themes, and a modern dashboard.
 
-**Repository status:** **Private** (for personal daily-use testing). Public release can wait until thoroughly validated in real work.
+**Repository:** Public · **Team access via GitHub Pages** (same pattern as AI Awareness Course).
 
-**Full documentation:** [DOCUMENTATION.md](./DOCUMENTATION.md)
+| | |
+|--|--|
+| **GitHub Pages (share with team)** | https://ritchegerona.github.io/chietask/ |
+| **Browser demo (no install)** | https://ritchegerona.github.io/chietask/demo.html |
+| **Docs** | https://ritchegerona.github.io/chietask/docs.html |
+| **Install full multi-user SaaS** | https://ritchegerona.github.io/chietask/install.html |
+| **Source repo** | https://github.com/ritchegerona/chietask |
 
+**Full documentation (in repo):** [DOCUMENTATION.md](./DOCUMENTATION.md)
+
+> **Note:** GitHub Pages hosts the **static demo + docs**. The full multi-user SaaS (login, workspaces, API) still runs with Python/Docker locally — see Install.
 ---
 
 ## Requirements (dependencies)
@@ -50,14 +59,14 @@ No Node.js build step is required (vanilla HTML/CSS/JS frontend).
 ### 1. Clone (private repo)
 
 ```bash
-git clone https://github.com/ritchelinuxlab/chietask.git
+git clone https://github.com/ritchegerona/chietask.git
 cd chietask
 ```
 
 Use SSH if you prefer:
 
 ```bash
-git clone git@github.com:ritchelinuxlab/chietask.git
+git clone git@github.com:ritchegerona/chietask.git
 cd chietask
 ```
 
