@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChieTask — Work Task Tracker SaaS</title>
+  <link rel="stylesheet" href="/static/css/styles.css?v=2.5">
+  <script>
+    (function () {
+      var p = localStorage.getItem("chie_palette") || "ocean";
+      var m = localStorage.getItem("chie_theme") || "light";
+      document.documentElement.setAttribute("data-palette", p);
+      document.documentElement.setAttribute("data-mode", m === "dark" ? "dark" : "light");
+    })();
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a class="nav-logo" href="/">📋 ChieTask</a>
+    <div class="nav-links">
+      <a href="/pricing" class="btn btn-ghost btn-sm">Pricing</a>
+      <a href="/login" class="btn btn-ghost btn-sm">Log in</a>
+      <a href="/register" class="btn btn-primary btn-sm">Start free</a>
+    </div>
+  </nav>
+
+  <section class="hero hero-glow">
+    <div class="hero-badge">Multi-user SaaS · Workspaces · Time tracking</div>
+    <h1>Office work, <span>organized</span>.</h1>
+    <p>
+      ChieTask helps teams track tasks, priorities, progress, and time —
+      with secure accounts, shared workspaces, and CSV reports.
+    </p>
+    <div class="hero-cta">
+      <a href="/register" class="btn btn-primary">Create free account</a>
+      <a href="/login" class="btn btn-ghost">Sign in</a>
+      <a href="/pricing" class="btn btn-ghost">See pricing</a>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="feature-card">
+      <div class="icon">🔐</div>
+      <h3>Secure multi-user</h3>
+      <p>Each account has isolated data. JWT auth, workspaces, and role-based invites.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">⏱️</div>
+      <h3>Time & progress</h3>
+      <p>Per-task timers, progress bars, priorities, due dates, and daily work logs.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🏢</div>
+      <h3>Workspaces</h3>
+      <p>Personal or team workspaces with categories tailored to office workflows.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📊</div>
+      <h3>Reports</h3>
+      <p>Export CSV reports anytime. See today's hours, done count, and pending load.</p>
+    </div>
+  </section>
+
+  <section style="text-align:center;padding:0 24px 60px;">
+    <h2 style="margin-bottom:8px;">Simple pricing</h2>
+    <p style="color:var(--text-light);margin-bottom:28px;">Start free. Upgrade when you need more.</p>
+    <a href="/pricing" class="btn btn-primary">View plans</a>
+  </section>
+
+  <footer class="footer">
+    © 2026 ChieTask · Built for productive office teams
+  </footer>
+
+  <script>
+    // Redirect authenticated users to app
+    if (localStorage.getItem('chie_token')) {
+      window.location.href = '/app';
+    }
+  </script>
+</body>
+</html>

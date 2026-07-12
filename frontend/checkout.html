@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout · ChieTask</title>
+  <link rel="stylesheet" href="/static/css/styles.css?v=2.5">
+  <style>
+    .checkout-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+      background:
+        radial-gradient(ellipse 70% 50% at 20% 10%, color-mix(in srgb, var(--mint) 18%, transparent), transparent),
+        radial-gradient(ellipse 50% 40% at 90% 80%, color-mix(in srgb, var(--high) 12%, transparent), transparent),
+        var(--bg);
+    }
+    .checkout-card {
+      width: min(920px, 100%);
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 0;
+      background: color-mix(in srgb, var(--card) 94%, transparent);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(16px);
+    }
+    @media (max-width: 800px) {
+      .checkout-card { grid-template-columns: 1fr; }
+    }
+    .checkout-summary {
+      padding: 32px 28px;
+      background: linear-gradient(160deg, color-mix(in srgb, var(--mint) 16%, var(--card)), var(--card));
+      border-right: 1px solid var(--border);
+    }
+    .checkout-form-side { padding: 32px 28px; }
+    .checkout-brand { font-weight: 700; font-size: 15px; margin-bottom: 28px; color: var(--mint-dark); }
+    .checkout-summary h1 { font-size: 24px; margin-bottom: 8px; }
+    .checkout-summary .price {
+      font-size: 36px; font-weight: 800; letter-spacing: -0.02em; margin: 18px 0 8px;
+    }
+    .checkout-summary .price small { font-size: 14px; font-weight: 600; color: var(--text-light); }
+    .limit-list { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 10px; }
+    .limit-list li {
+      display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text);
+    }
+    .limit-list li::before { content: "✓"; color: var(--mint-dark); font-weight: 700; }
+    .checkout-form-side h2 { font-size: 18px; margin-bottom: 6px; }
+    .checkout-form-side .sub { font-size: 13px; color: var(--text-light); margin-bottom: 20px; }
+    .card-row { display: grid; grid-template-columns: 1.4fr 0.8fr 0.8fr; gap: 10px; }
+    @media (max-width: 560px) { .card-row { grid-template-columns: 1fr; } }
+    .secure-note {
+      margin-top: 14px; font-size: 11px; color: var(--text-light); line-height: 1.45;
+    }
+    .checkout-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+    .checkout-actions .btn { flex: 1; min-width: 140px; justify-content: center; }
+    .error-banner {
+      display: none; background: #fde8e8; color: #c0392b; padding: 10px 12px;
+      border-radius: 10px; font-size: 13px; margin-bottom: 14px;
+    }
+    .error-banner.show { display: block; }
+    .success-panel { text-align: center; padding: 40px 20px; }
+    .success-panel .big { font-size: 48px; margin-bottom: 12px; }
+  </style>
+  <script>
+    (function () {
+      var p = localStorage.getItem("chie_palette") || "ocean";
+      var m = localStorage.getItem("chie_theme") || "light";
+      document.documentElement.setAttribute("data-palette", p);
+      document.documentElement.setAttribute("data-mode", m);
+    })();
+  </script>
+</head>
+<body>
+  <div class="checkout-wrap">
+    <div class="checkout-card" id="checkoutRoot">
+      <div class="checkout-summary">
+        <div class="checkout-brand">📋 ChieTask</div>
+        <p style="font-size:12px;color:var(--text-light);text-transform:uppercase;letter-spacing:1px;">Subscribe</p>
+        <h1 id="planTitle">Pro</h1>
+        <div class="price" id="planPrice">$9<small>/mo</small></div>
+        <p style="font-size:13px;color:var(--text-light);" id="planBlurb">Unlock more tasks and workspaces.</p>
+        <ul class="limit-list" id="planLimits"></ul>
+      </div>
+      <div class="checkout-form-side">
+        <div id="payFormBlock">
+          <h2>Payment details</h2>
+          <p class="sub">Secure checkout dashboard. Demo mode — no real charges.</p>
+          <div class="error-banner" id="errBox"></div>
+          <!-- Demo checkout: never use autocomplete=cc-* so browsers don't save/suggest real card data elsewhere -->
+          <form id="payForm" autocomplete="off" novalidate onsubmit="return false;">
+          <div class="form-group">
+            <label for="cardName">Cardholder name</label>
+            <input class="form-control" id="cardName" name="demo_cardholder" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" placeholder="Name on card">
+          </div>
+          <div class="form-group">
+            <label for="cardNumber">Card number</label>
+            <input class="form-control" id="cardNumber" name="demo_card_number" inputmode="numeric" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" placeholder="4242 4242 4242 4242" maxlength="19">
+          </div>
+          <div class="card-row">
+            <div class="form-group">
+              <label for="cardExp">Expiry</label>
+              <input class="form-control" id="cardExp" name="demo_card_exp" placeholder="MM/YY" maxlength="5" autocomplete="off" data-form-type="other">
+            </div>
+            <div class="form-group">
+              <label for="cardCvc">CVC</label>
+              <input class="form-control" id="cardCvc" name="demo_card_cvc" placeholder="123" maxlength="4" inputmode="numeric" autocomplete="off" data-form-type="other">
+            </div>
+            <div class="form-group">
+              <label for="cardZip">ZIP</label>
+              <input class="form-control" id="cardZip" name="demo_card_zip" placeholder="10001" maxlength="12" autocomplete="off" data-form-type="other">
+            </div>
+          </div>
+          </form>
+          <div class="checkout-actions">
+            <button type="button" class="btn btn-ghost" id="btnCancel">Cancel</button>
+            <button type="button" class="btn btn-primary" id="btnPay">Pay & activate</button>
+          </div>
+          <p class="secure-note">
+            Demo payment form for subscription flow. Card data stays in your browser and only last4 digits are sent for confirmation.
+            Connect Stripe/Paddle in production for real billing.
+          </p>
+        </div>
+        <div id="successBlock" class="success-panel" hidden>
+          <div class="big">🎉</div>
+          <h2>You're upgraded!</h2>
+          <p class="sub" id="successMsg">Plan activated successfully.</p>
+          <div class="checkout-actions" style="justify-content:center;">
+            <a class="btn btn-primary" href="/app">Back to app</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="/static/js/api.js?v=2.5"></script>
+  <script>
+    (function () {
+      if (!API.getToken()) {
+        window.location.href = "/login?next=/checkout" + window.location.search;
+        return;
+      }
+      const params = new URLSearchParams(window.location.search);
+      let sessionId = params.get("session");
+      let plan = (params.get("plan") || "pro").toLowerCase();
+
+      const errBox = document.getElementById("errBox");
+      function showErr(msg) {
+        errBox.textContent = msg || "Something went wrong";
+        errBox.classList.add("show");
+      }
+      function clearErr() { errBox.classList.remove("show"); errBox.textContent = ""; }
+
+      function formatCard(v) {
+        return v.replace(/\D/g, "").slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ").trim();
+      }
+      document.getElementById("cardNumber").addEventListener("input", (e) => {
+        e.target.value = formatCard(e.target.value);
+      });
+      document.getElementById("cardExp").addEventListener("input", (e) => {
+        let v = e.target.value.replace(/\D/g, "").slice(0, 4);
+        if (v.length >= 3) v = v.slice(0, 2) + "/" + v.slice(2);
+        e.target.value = v;
+      });
+
+      function renderSession(data) {
+        plan = data.plan;
+        document.getElementById("planTitle").textContent = data.plan_name || plan;
+        const dollars = ((data.amount_cents || 0) / 100).toFixed(0);
+        document.getElementById("planPrice").innerHTML = `$${dollars}<small>/mo</small>`;
+        const lim = data.limits || {};
+        document.getElementById("planBlurb").textContent =
+          `Upgrade from ${data.current_plan || "free"} · billed monthly`;
+        document.getElementById("planLimits").innerHTML = [
+          `${Number(lim.max_tasks || 0).toLocaleString()} tasks`,
+          `${lim.max_workspaces || 0} workspaces`,
+          `${lim.max_members || 0} members per workspace`,
+        ].map((t) => `<li>${t}</li>`).join("");
+      }
+
+      async function ensureSession() {
+        if (sessionId) {
+          const data = await API.getCheckoutSession(sessionId);
+          renderSession(data);
+          return;
+        }
+        const created = await API.createCheckoutSession(plan);
+        sessionId = created.session_id;
+        const url = new URL(window.location.href);
+        url.searchParams.set("session", sessionId);
+        url.searchParams.set("plan", created.plan);
+        history.replaceState({}, "", url.toString());
+        const data = await API.getCheckoutSession(sessionId);
+        renderSession(data);
+      }
+
+      document.getElementById("btnCancel").addEventListener("click", () => {
+        window.location.href = "/app";
+      });
+
+      document.getElementById("btnPay").addEventListener("click", async () => {
+        clearErr();
+        const name = document.getElementById("cardName").value.trim();
+        const num = document.getElementById("cardNumber").value.replace(/\s/g, "");
+        const exp = document.getElementById("cardExp").value.trim();
+        const cvc = document.getElementById("cardCvc").value.trim();
+        if (!name) return showErr("Enter the cardholder name.");
+        if (num.length < 13) return showErr("Enter a valid card number.");
+        if (!/^\d{2}\/\d{2}$/.test(exp)) return showErr("Expiry must be MM/YY.");
+        if (cvc.length < 3) return showErr("Enter CVC.");
+        const btn = document.getElementById("btnPay");
+        btn.disabled = true;
+        btn.textContent = "Processing…";
+        try {
+          const user = await API.confirmCheckout({
+            session_id: sessionId,
+            cardholder_name: name,
+            card_last4: num.slice(-4),
+            payment_token: "demo_" + Date.now().toString(36),
+          });
+          localStorage.setItem(API.userKey, JSON.stringify(user));
+          document.getElementById("payFormBlock").hidden = true;
+          document.getElementById("successBlock").hidden = false;
+          document.getElementById("successMsg").textContent =
+            `Your ${user.plan} plan is active. Enjoy the higher limits!`;
+        } catch (e) {
+          showErr(e.message || "Payment failed");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Pay & activate";
+        }
+      });
+
+      ensureSession().catch((e) => {
+        showErr(e.message || "Could not start checkout");
+      });
+    })();
+  </script>
+</body>
+</html>

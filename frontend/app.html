@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChieTask App</title>
+  <link rel="stylesheet" href="/static/css/styles.css?v=2.8">
+  <script>
+    // Prevent theme flash before app.js
+    (function () {
+      var p = localStorage.getItem("chie_palette") || "ocean";
+      var m = localStorage.getItem("chie_theme") || "light";
+      if (m !== "dark" && m !== "light") m = "light";
+      document.documentElement.setAttribute("data-palette", p);
+      document.documentElement.setAttribute("data-mode", m);
+      document.addEventListener("DOMContentLoaded", function () {
+        document.body.setAttribute("data-palette", p);
+        document.body.setAttribute("data-mode", m);
+        if (m === "dark") document.body.setAttribute("data-theme", "dark");
+      });
+    })();
+  </script>
+</head>
+<body class="dashboard-body">
+  <!-- Interactive ambient background -->
+  <div class="dash-bg" id="dashBg" aria-hidden="true">
+    <div class="dash-bg-gradient"></div>
+    <div class="dash-orb orb-1"></div>
+    <div class="dash-orb orb-2"></div>
+    <div class="dash-orb orb-3"></div>
+    <div class="dash-grid"></div>
+    <canvas class="dash-particles" id="dashParticles"></canvas>
+  </div>
+
+  <div class="app-layout" id="appLayout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <div class="logo">📋 ChieTask</div>
+        <button class="icon-btn sidebar-close" id="btnSidebarClose" title="Close menu" aria-label="Close menu">✕</button>
+      </div>
+
+      <div class="user-chip">
+        <div class="user-avatar" id="userAvatar" title="Profile photo">?</div>
+        <div class="user-meta">
+          <div class="name" id="userName">…</div>
+          <div class="plan" id="userPlan">free plan</div>
+        </div>
+        <button class="icon-btn" id="btnSettings" title="Settings" style="width:28px;height:28px;font-size:12px;">⚙️</button>
+        <button class="icon-btn" id="btnLogout" title="Log out" style="width:28px;height:28px;font-size:12px;">⏻</button>
+      </div>
+
+      <div>
+        <h3 style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-light);margin-bottom:6px;">Workspace</h3>
+        <select class="workspace-select" id="workspaceSelect"></select>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="btn btn-ghost btn-sm" id="btnNewWs" style="flex:1;">+ New</button>
+          <button class="btn btn-ghost btn-sm" id="btnInvite" style="flex:1;">Invite</button>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-head">
+          <h3>Categories</h3>
+          <button type="button" class="btn-text" id="btnManageCats" title="Manage categories">Edit</button>
+        </div>
+        <div id="categoryFilters"></div>
+        <button type="button" class="filter-btn cat-add-btn" id="btnQuickAddCat">
+          <div class="filter-dot" style="background:var(--mint)"></div>+ New category
+        </button>
+      </div>
+
+      <div class="nav-section priority-filters">
+        <h3>Priority</h3>
+        <button class="filter-btn" data-prio="urgent"><div class="filter-dot" style="background:var(--urgent)"></div>Urgent</button>
+        <button class="filter-btn" data-prio="high"><div class="filter-dot" style="background:var(--high)"></div>High</button>
+        <button class="filter-btn" data-prio="normal"><div class="filter-dot" style="background:var(--normal)"></div>Normal</button>
+        <button class="filter-btn" data-prio="low"><div class="filter-dot" style="background:var(--low)"></div>Low</button>
+      </div>
+
+      <div class="quick-stats">
+        <div class="qs-item"><span>Hours today</span><span class="qs-val" id="todayHours">0m 0s</span></div>
+        <div class="qs-item"><span>Done today</span><span class="qs-val" id="todayDone">0</span></div>
+        <div class="qs-item"><span>Pending</span><span class="qs-val" id="sidebarPending">0</span></div>
+      </div>
+    </aside>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- MAIN -->
+    <main class="main-content">
+      <div class="top-bar">
+        <div class="top-bar-left">
+          <button class="icon-btn hamburger-btn" id="btnMenu" title="Menu" aria-label="Open menu">☰</button>
+          <div class="page-title" id="pageTitle">All Tasks</div>
+        </div>
+        <div class="top-actions">
+          <div class="search-box">
+            <span class="search-icon" aria-hidden="true">🔍</span>
+            <input type="search" id="searchInput" placeholder="Search tasks…" autocomplete="off" aria-label="Search tasks">
+          </div>
+          <div class="view-tabs">
+            <button class="view-tab active" data-view="pending">Pending</button>
+            <button class="view-tab" data-view="completed">Done</button>
+            <button class="view-tab" data-view="all">All</button>
+          </div>
+          <button class="icon-btn" id="btnFocus" title="Focus Mode (F)">🎯</button>
+          <div class="theme-menu">
+            <button class="icon-btn" id="btnTheme" title="Theme & palette (T)" aria-haspopup="true" aria-expanded="false">🎨</button>
+            <div class="theme-popover" id="themePopover" role="menu" aria-label="Theme options">
+              <div class="theme-popover-title">Color palette</div>
+              <button type="button" class="theme-option" data-palette="ocean" role="menuitem">
+                <span class="theme-swatch ocean" aria-hidden="true"></span>
+                <span class="theme-option-label">Ocean</span>
+                <span class="theme-option-hint">Default</span>
+              </button>
+              <button type="button" class="theme-option" data-palette="aurora" role="menuitem">
+                <span class="theme-swatch aurora" aria-hidden="true"></span>
+                <span class="theme-option-label">Aurora</span>
+              </button>
+              <button type="button" class="theme-option" data-palette="slate" role="menuitem">
+                <span class="theme-swatch slate" aria-hidden="true"></span>
+                <span class="theme-option-label">Slate</span>
+              </button>
+              <button type="button" class="theme-option" data-palette="sunset" role="menuitem">
+                <span class="theme-swatch sunset" aria-hidden="true"></span>
+                <span class="theme-option-label">Sunset</span>
+              </button>
+              <div class="theme-mode-row">
+                <button type="button" id="themeModeLight" data-mode="light">Light</button>
+                <button type="button" id="themeModeDark" data-mode="dark">Dark</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- div (not form) + non-payment names + no autocomplete: blocks card/history autofill -->
+      <div class="input-row" id="inputRow" role="group" aria-label="Add task">
+        <input
+          type="text"
+          id="taskInput"
+          name="chie_task_text"
+          placeholder="New work task… (Press N)"
+          autocomplete="off"
+          autocapitalize="sentences"
+          autocorrect="on"
+          spellcheck="true"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
+          inputmode="text"
+          enterkeyhint="done"
+          readonly
+        >
+        <div class="cat-combo">
+          <select id="catSelect" class="cat-select" name="chie_task_category" title="Category" aria-label="Category" autocomplete="off">
+            <option value="General">General</option>
+          </select>
+          <input
+            type="text"
+            id="catInput"
+            class="cat-custom-input"
+            name="chie_task_category_custom"
+            placeholder="Custom category…"
+            autocomplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
+            hidden
+            title="Custom category name"
+          >
+        </div>
+        <select id="prioInput" name="chie_task_priority" aria-label="Priority" autocomplete="off">
+          <option value="normal">Normal</option>
+          <option value="urgent">Urgent</option>
+          <option value="high">High</option>
+          <option value="low">Low</option>
+        </select>
+        <label class="due-field" for="dueInput" title="Due date">
+          <span class="due-field-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="16" rx="2.5" stroke="currentColor" stroke-width="2.2"/>
+              <path d="M3 10h18" stroke="currentColor" stroke-width="2.2"/>
+              <path d="M8 3v4M16 3v4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <circle cx="8.5" cy="14.5" r="1.35" fill="currentColor"/>
+              <circle cx="12" cy="14.5" r="1.35" fill="currentColor"/>
+              <circle cx="15.5" cy="14.5" r="1.35" fill="currentColor"/>
+            </svg>
+          </span>
+          <input type="date" id="dueInput" name="chie_task_due" aria-label="Due date" autocomplete="off" title="Pick a due date">
+        </label>
+        <button type="button" class="add-btn" id="addBtn">+ Add</button>
+      </div>
+
+      <div class="task-list" id="taskList"></div>
+    </main>
+
+    <!-- RIGHT -->
+    <aside class="right-panel">
+      <div class="panel-card panel-card-calendar">
+        <div class="cal-nav">
+          <button type="button" class="cal-nav-btn" id="calPrev" title="Previous month" aria-label="Previous month">‹</button>
+          <span class="cal-title" id="calTitle"></span>
+          <button type="button" class="cal-nav-btn" id="calNext" title="Next month" aria-label="Next month">›</button>
+        </div>
+        <div class="calendar-mini" id="calGrid"></div>
+      </div>
+
+      <div class="panel-card" style="flex:1;">
+        <div class="panel-title">📝 Today's Work Log</div>
+        <div id="workLog"></div>
+      </div>
+
+      <button class="export-btn" id="btnExport">📊 Export CSV Report</button>
+      <div class="shortcuts-hint">
+        <kbd>N</kbd> New &nbsp; <kbd>F</kbd> Focus &nbsp; <kbd>E</kbd> Export &nbsp; <kbd>T</kbd> Dark &nbsp; <kbd>⇧T</kbd> Palette
+      </div>
+    </aside>
+  </div>
+
+  <!-- CATEGORY MANAGER MODAL -->
+  <div class="modal-overlay" id="catOverlay">
+    <div class="modal cat-modal">
+      <div class="settings-header">
+        <h3>🏷️ Manage Categories</h3>
+        <button class="icon-btn" id="catClose" title="Close" aria-label="Close">✕</button>
+      </div>
+      <p class="settings-section-desc">Create, rename, recolor, or delete categories. Renaming updates all tasks that use that category.</p>
+      <div class="cat-create-row">
+        <input type="text" id="newCatName" class="form-control" name="chie_new_cat" placeholder="New category name" maxlength="80" autocomplete="off" data-form-type="other" data-lpignore="true">
+        <input type="color" id="newCatColor" value="#4f8cff" title="Color">
+        <button type="button" class="btn btn-primary btn-sm" id="newCatAdd">Add</button>
+      </div>
+      <div class="cat-manager-list" id="catManagerList"></div>
+    </div>
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div class="modal-overlay" id="editOverlay">
+    <div class="modal">
+      <h3>✏️ Edit Task</h3>
+      <form id="editForm" autocomplete="off" novalidate onsubmit="return false;">
+        <input type="hidden" id="editId" name="chie_edit_id" autocomplete="off">
+        <div class="form-group">
+          <label>Task Name</label>
+          <input type="text" id="editText" name="chie_edit_text" class="form-control" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="editCatSelect" name="chie_edit_cat" class="form-control" autocomplete="off"></select>
+          <input type="text" id="editCat" name="chie_edit_cat_custom" class="form-control" placeholder="Custom category…" autocomplete="off" data-form-type="other" style="margin-top:8px;" hidden>
+        </div>
+        <div class="form-group"><label>Priority</label>
+          <select id="editPrio" name="chie_edit_prio" class="form-control" autocomplete="off">
+            <option value="urgent">Urgent</option>
+            <option value="high">High</option>
+            <option value="normal">Normal</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="editDue">Due Date</label>
+          <label class="due-field due-field-block" for="editDue" title="Due date">
+            <span class="due-field-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="3" y="5" width="18" height="16" rx="2.5" stroke="currentColor" stroke-width="2"/>
+                <path d="M3 10h18" stroke="currentColor" stroke-width="2"/>
+                <path d="M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="8.5" cy="14.5" r="1.2" fill="currentColor"/>
+                <circle cx="12" cy="14.5" r="1.2" fill="currentColor"/>
+                <circle cx="15.5" cy="14.5" r="1.2" fill="currentColor"/>
+              </svg>
+            </span>
+            <input type="date" id="editDue" name="chie_edit_due" class="form-control" autocomplete="off">
+          </label>
+        </div>
+        <div class="form-group"><label>Progress (%)</label><input type="number" id="editProgress" name="chie_edit_progress" min="0" max="100" step="10" class="form-control" autocomplete="off"></div>
+        <div class="form-group"><label>Notes</label><input type="text" id="editNotes" name="chie_edit_notes" class="form-control" placeholder="Optional notes" autocomplete="off" data-form-type="other"></div>
+        <div class="edit-actions">
+          <button type="button" class="btn btn-ghost" id="editCancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="editSave">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div class="modal-overlay" id="settingsOverlay">
+    <div class="modal settings-modal">
+      <div class="settings-header">
+        <h3>⚙️ Account Settings</h3>
+        <button class="icon-btn" id="settingsClose" title="Close" aria-label="Close settings">✕</button>
+      </div>
+
+      <div class="settings-tabs" role="tablist">
+        <button class="settings-tab active" data-tab="profile" role="tab">Profile</button>
+        <button class="settings-tab" data-tab="security" role="tab">Security</button>
+        <button class="settings-tab" data-tab="plan" role="tab">Plan & usage</button>
+      </div>
+
+      <!-- Profile -->
+      <div class="settings-panel active" id="settingsPanelProfile" role="tabpanel">
+        <div class="settings-account-summary">
+          <div class="avatar-edit-wrap">
+            <div class="user-avatar settings-avatar" id="settingsAvatar">?</div>
+            <label class="avatar-upload-btn" for="avatarFile" title="Change photo">📷</label>
+            <input type="file" id="avatarFile" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+          </div>
+          <div>
+            <div class="settings-summary-name" id="settingsDisplayName">—</div>
+            <div class="settings-summary-email" id="settingsEmail">—</div>
+            <span class="settings-plan-badge" id="settingsPlanBadge">free</span>
+          </div>
+        </div>
+        <p class="settings-section-desc">Upload a profile picture (JPEG, PNG, WebP, or GIF · max 2MB).</p>
+        <div class="edit-actions" style="margin-bottom:14px;">
+          <button type="button" class="btn btn-ghost btn-sm" id="settingsRemoveAvatar">Remove photo</button>
+        </div>
+        <div class="form-group">
+          <label for="settingsName">Display name</label>
+          <input type="text" id="settingsName" class="form-control" maxlength="120" autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="settingsEmailReadonly" class="form-control" readonly disabled>
+        </div>
+        <p class="settings-hint" id="settingsProfileMsg" hidden></p>
+        <div class="edit-actions">
+          <button class="btn btn-primary" id="settingsSaveProfile">Save profile</button>
+        </div>
+      </div>
+
+      <!-- Security -->
+      <div class="settings-panel" id="settingsPanelSecurity" role="tabpanel">
+        <p class="settings-section-desc">Change your password. You’ll need your current password.</p>
+        <div class="form-group">
+          <label for="settingsCurrentPw">Current password</label>
+          <input type="password" id="settingsCurrentPw" class="form-control" autocomplete="current-password" minlength="6">
+        </div>
+        <div class="form-group">
+          <label for="settingsNewPw">New password</label>
+          <input type="password" id="settingsNewPw" class="form-control" autocomplete="new-password" minlength="6">
+        </div>
+        <div class="form-group">
+          <label for="settingsConfirmPw">Confirm new password</label>
+          <input type="password" id="settingsConfirmPw" class="form-control" autocomplete="new-password" minlength="6">
+        </div>
+        <p class="settings-hint" id="settingsPasswordMsg" hidden></p>
+        <div class="edit-actions">
+          <button class="btn btn-primary" id="settingsSavePassword">Update password</button>
+        </div>
+      </div>
+
+      <!-- Plan & usage -->
+      <div class="settings-panel" id="settingsPanelPlan" role="tabpanel">
+        <div class="usage-card" id="usageCard">
+          <div class="usage-loading">Loading usage…</div>
+        </div>
+        <div class="upgrade-section">
+          <h4 class="settings-subheading">Upgrade plan</h4>
+          <p class="settings-section-desc">Select a plan, then continue to the secure payment dashboard to subscribe.</p>
+          <div class="plan-options" id="planOptions">
+            <button type="button" class="plan-option" data-plan="free">
+              <strong>Free</strong>
+              <span>$0/mo · 100 tasks · 1 workspace</span>
+            </button>
+            <button type="button" class="plan-option" data-plan="pro">
+              <strong>Pro</strong>
+              <span>$9/mo · 5,000 tasks · 5 workspaces</span>
+            </button>
+            <button type="button" class="plan-option" data-plan="team">
+              <strong>Team</strong>
+              <span>$29/mo · 50,000 tasks · 25 members</span>
+            </button>
+          </div>
+          <p class="settings-hint" id="settingsUpgradeMsg" hidden></p>
+          <div class="edit-actions">
+            <button class="btn btn-primary" id="settingsUpgradeBtn" disabled>Continue to payment</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="saveToast" class="save-toast">✓ Saved</div>
+
+  <script src="/static/js/api.js?v=2.7"></script>
+  <script src="/static/js/app.js?v=3.0"></script>
+</body>
+</html>

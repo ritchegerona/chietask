@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pricing — ChieTask</title>
+  <link rel="stylesheet" href="/static/css/styles.css?v=2.5">
+</head>
+<body>
+  <nav class="nav">
+    <a class="nav-logo" href="/">📋 ChieTask</a>
+    <div class="nav-links">
+      <a href="/login" class="btn btn-ghost btn-sm">Log in</a>
+      <a href="/register" class="btn btn-primary btn-sm">Start free</a>
+    </div>
+  </nav>
+
+  <section class="hero" style="padding-bottom:40px;">
+    <h1>Simple, fair <span>pricing</span></h1>
+    <p>Start free. Scale when your team grows. Limits are enforced per workspace plan.</p>
+  </section>
+
+  <div class="pricing-grid">
+    <div class="price-card">
+      <h3>Free</h3>
+      <p style="color:var(--text-light);font-size:13px;">For individuals</p>
+      <div class="price">$0 <span>/mo</span></div>
+      <ul>
+        <li>100 tasks</li>
+        <li>1 workspace</li>
+        <li>1 member</li>
+        <li>Time tracking & CSV export</li>
+        <li>Dark mode & focus mode</li>
+      </ul>
+      <a href="/register" class="btn btn-ghost btn-block">Get started</a>
+    </div>
+
+    <div class="price-card featured">
+      <div class="badge">Popular</div>
+      <h3>Pro</h3>
+      <p style="color:var(--text-light);font-size:13px;">For power users</p>
+      <div class="price">$9 <span>/mo</span></div>
+      <ul>
+        <li>5,000 tasks</li>
+        <li>5 workspaces</li>
+        <li>1 member</li>
+        <li>Everything in Free</li>
+        <li>Priority support</li>
+      </ul>
+      <a href="/register" class="btn btn-primary btn-block">Start Pro trial</a>
+    </div>
+
+    <div class="price-card">
+      <h3>Team</h3>
+      <p style="color:var(--text-light);font-size:13px;">For small teams</p>
+      <div class="price">$29 <span>/mo</span></div>
+      <ul>
+        <li>50,000 tasks</li>
+        <li>20 workspaces</li>
+        <li>Up to 25 members</li>
+        <li>Invites & roles</li>
+        <li>Shared work logs</li>
+      </ul>
+      <a href="/register" class="btn btn-ghost btn-block">Start Team trial</a>
+    </div>
+  </div>
+
+  <footer class="footer">
+    Billing integration (Stripe) can be wired in production · Plan limits already enforced in the API
+  </footer>
+</body>
+</html>
