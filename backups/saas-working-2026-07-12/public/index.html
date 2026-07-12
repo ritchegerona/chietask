@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChieTask — Office Task Tracker</title>
+  <meta name="description" content="ChieTask helps teams track tasks, time, and progress. Open the browser demo or run the full multi-user SaaS locally.">
+  <link rel="stylesheet" href="css/styles.css">
+  <script>
+    (function () {
+      var p = localStorage.getItem("chie_palette") || "ocean";
+      var m = localStorage.getItem("chie_theme") || "light";
+      document.documentElement.setAttribute("data-palette", p);
+      document.documentElement.setAttribute("data-mode", m === "dark" ? "dark" : "light");
+    })();
+  </script>
+  <style>
+    .pages-banner {
+      background: color-mix(in srgb, var(--mint) 14%, var(--card));
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .pages-banner a { color: var(--mint-dark); font-weight: 700; }
+    .hero-cta { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .link-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      max-width: 900px;
+      margin: 0 auto 48px;
+      padding: 0 20px;
+    }
+    .link-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color .15s, transform .15s, box-shadow .15s;
+    }
+    .link-card:hover {
+      border-color: var(--mint);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+    .link-card h3 { margin: 0 0 6px; font-size: 16px; }
+    .link-card p { margin: 0; font-size: 13px; color: var(--text-light); line-height: 1.45; }
+  </style>
+</head>
+<body>
+  <div class="pages-banner">
+    <strong>MSR workmates:</strong>
+    <a href="./app.html">Open full ChieTask (same as SaaS · free · no install)</a>
+    ·
+    <a href="https://github.com/ritchegerona/chietask">Source on GitHub</a>
+  </div>
+
+  <nav class="nav">
+    <a class="nav-logo" href="./">📋 ChieTask</a>
+    <div class="nav-links">
+      <a href="./login.html" class="btn btn-primary btn-sm">MSR web app</a>
+      <a href="./docs.html" class="btn btn-ghost btn-sm">Docs</a>
+      <a href="https://github.com/ritchegerona/chietask" class="btn btn-ghost btn-sm">GitHub</a>
+    </div>
+  </nav>
+
+  <section class="hero hero-glow">
+    <div class="hero-badge">Exact SaaS experience · Free for all MSR · Pure web · Personal browser storage</div>
+    <h1>Office work, <span>organized</span>.</h1>
+    <p>
+      The same ChieTask SaaS dashboard your team uses locally — tasks, multi-timers, categories,
+      workspaces, settings, themes — now in the browser for <strong>every MSR workmate</strong>.
+      Free, no install. Your account and tasks stay on <strong>your device only</strong>.
+    </p>
+    <div class="hero-cta">
+      <a href="./register.html" class="btn btn-primary">Create free MSR account</a>
+      <a href="./login.html" class="btn btn-ghost">Sign in</a>
+      <a href="./docs.html" class="btn btn-ghost">Documentation</a>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="feature-card">
+      <div class="icon">✅</div>
+      <h3>Tasks & priorities</h3>
+      <p>Urgent / high / normal / low, due dates, progress, and categories.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">⏱️</div>
+      <h3>Multi-task timers</h3>
+      <p>Run several timers at once. Time shows in the work log.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🎨</div>
+      <h3>Themes</h3>
+      <p>Ocean, Aurora, Slate, Sunset — light and dark mode.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🏢</div>
+      <h3>Full SaaS mode</h3>
+      <p>Accounts, workspaces, plans, and API — run locally with Python or Docker.</p>
+    </div>
+  </section>
+
+  <h2 style="text-align:center;margin:8px 20px 20px;">Quick links for the team</h2>
+  <div class="link-grid">
+    <a class="link-card" href="./login.html" style="border-color:color-mix(in srgb,var(--mint) 45%,var(--border));">
+      <h3>🏢 Full SaaS app (MSR free)</h3>
+      <p><strong>Exact working tracker.</strong> Register once, then use the full dashboard. Data private on your browser.</p>
+    </a>
+    <a class="link-card" href="./app.html">
+      <h3>▶ Open app</h3>
+      <p>Go straight to the dashboard if you already signed in on this device.</p>
+    </a>
+    <a class="link-card" href="./docs.html">
+      <h3>📘 Documentation</h3>
+      <p>Architecture, API, data model, security notes, and how the multi-user product works.</p>
+    </a>
+    <a class="link-card" href="./install.html">
+      <h3>⚙️ Install full SaaS</h3>
+      <p>For developers: Python/Docker multi-user app with accounts and workspaces.</p>
+    </a>
+  </div>
+
+  <footer class="footer">
+    © 2026 ChieTask · Built for productive office teams ·
+    <a href="https://github.com/ritchegerona/chietask" style="color:var(--mint-dark);">ritchegerona/chietask</a>
+  </footer>
+</body>
+</html>

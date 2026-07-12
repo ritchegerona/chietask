@@ -201,20 +201,6 @@ chietask/
 
 ---
 
-## Working SaaS backup
-
-A full snapshot of the **verified working multi-user SaaS** is stored at:
-
-| Path | Description |
-|------|-------------|
-| `backups/saas-working-2026-07-12/` | Folder snapshot (source + DB at backup time) |
-| `backups/saas-working-2026-07-12.zip` | Same snapshot as zip |
-| `backups/saas-working-2026-07-12/BACKUP_INFO.md` | Restore steps |
-
-Verified at backup: **14 API tests passed**, health endpoint OK.
-
-Pre-SaaS original (legacy single-file app): `backups/pre-saas-original-2026-07-12/`.
-
 ## Production checklist (later)
 
 1. Strong `SECRET_KEY` (never commit it)  

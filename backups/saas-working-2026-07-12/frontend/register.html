@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign up — ChieTask</title>
+  <link rel="stylesheet" href="/static/css/styles.css?v=2.5">
+  <script>
+    (function () {
+      var p = localStorage.getItem("chie_palette") || "ocean";
+      var m = localStorage.getItem("chie_theme") || "light";
+      document.documentElement.setAttribute("data-palette", p);
+      document.documentElement.setAttribute("data-mode", m === "dark" ? "dark" : "light");
+    })();
+  </script>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <a class="nav-logo" href="/" style="margin-bottom:20px;display:inline-flex;">📋 ChieTask</a>
+      <h1>Create your account</h1>
+      <p class="sub">Free plan · No credit card required</p>
+      <div id="error" class="error-msg"></div>
+      <form id="registerForm">
+        <div class="form-group">
+          <label>Full name</label>
+          <input type="text" id="name" required placeholder="Jane Doe" autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label>Work email</label>
+          <input type="email" id="email" required placeholder="you@company.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="password" required minlength="6" placeholder="At least 6 characters" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Start free</button>
+      </form>
+      <p class="auth-footer">Already have an account? <a href="/login">Log in</a></p>
+    </div>
+  </div>
+  <script src="/static/js/api.js?v=2.5"></script>
+  <script>
+    if (API.getToken()) window.location.href = '/app';
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = document.getElementById('error');
+      const btn = document.getElementById('submitBtn');
+      err.classList.remove('show');
+      btn.disabled = true;
+      btn.textContent = 'Creating account…';
+      try {
+        const data = await API.register({
+          name: document.getElementById('name').value.trim(),
+          email: document.getElementById('email').value.trim(),
+          password: document.getElementById('password').value,
+        });
+        API.setAuth(data.access_token, data.user);
+        window.location.href = '/app';
+      } catch (ex) {
+        err.textContent = ex.message;
+        err.classList.add('show');
+        btn.disabled = false;
+        btn.textContent = 'Start free';
+      }
+    });
+  </script>
+</body>
+</html>

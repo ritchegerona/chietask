@@ -1,0 +1,39 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8765:8765"
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-chie-task-change-this-in-production}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:////app/storage/chietask.db}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=10080
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+    volumes:
+      - chietask_data:/app/storage
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/api/health')",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # Uncomment for production Postgres:
+  # db:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     POSTGRES_USER: chietask
+  #     POSTGRES_PASSWORD: chietask
+  #     POSTGRES_DB: chietask
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   # Then set DATABASE_URL=postgresql://chietask:chietask@db:5432/chietask
+
+volumes:
+  chietask_data:

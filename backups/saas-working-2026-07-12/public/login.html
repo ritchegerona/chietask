@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log in — ChieTask</title>
+  <link rel="stylesheet" href="css/styles.css?v=msr1">
+  <script>
+    (function () {
+      var p = localStorage.getItem("chie_palette") || "ocean";
+      var m = localStorage.getItem("chie_theme") || "light";
+      document.documentElement.setAttribute("data-palette", p);
+      document.documentElement.setAttribute("data-mode", m === "dark" ? "dark" : "light");
+    })();
+  </script>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <a class="nav-logo" href="index.html" style="margin-bottom:20px;display:inline-flex;">📋 ChieTask</a>
+      <h1>Welcome back</h1>
+      <p class="sub" style="color:var(--mint-dark);font-weight:600;">MSR free web edition · data on this browser only</p>
+      <p class="sub">Sign in to your workspace</p>
+      <div id="error" class="error-msg"></div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="email" required placeholder="you@company.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Log in</button>
+      </form>
+      <p class="auth-footer">No account? <a href="register.html">Create one free</a></p>
+      <p class="auth-footer" style="margin-top:8px;font-size:11px;">Free for all MSR workmates · Create an account if you are new</p>
+    </div>
+  </div>
+  <script src="js/api-local.js?v=msr1"></script>
+  <script>
+    if (API.getToken()) window.location.href = 'app.html';
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = document.getElementById('error');
+      const btn = document.getElementById('submitBtn');
+      err.classList.remove('show');
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
+      try {
+        const data = await API.login({
+          email: document.getElementById('email').value.trim(),
+          password: document.getElementById('password').value,
+        });
+        API.setAuth(data.access_token, data.user);
+        // Safe same-origin next redirect (e.g. back to /checkout after login)
+        const next = new URLSearchParams(location.search).get('next');
+        const safe =
+          next && next.startsWith('/') && !next.startsWith('//') && !next.includes('://')
+            ? next
+            : '/app';
+        if (safe === '/app' || safe.startsWith('/app')) safe = 'app.html';
+        if (safe.startsWith('/')) safe = safe.slice(1) || 'app.html';
+        window.location.href = safe;
+      } catch (ex) {
+        err.textContent = ex.message;
+        err.classList.add('show');
+        btn.disabled = false;
+        btn.textContent = 'Log in';
+      }
+    });
+  </script>
+</body>
+</html>

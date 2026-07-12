@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentation · ChieTask</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script>
+    (function () {
+      var p = localStorage.getItem("chie_palette") || "ocean";
+      var m = localStorage.getItem("chie_theme") || "light";
+      document.documentElement.setAttribute("data-palette", p);
+      document.documentElement.setAttribute("data-mode", m === "dark" ? "dark" : "light");
+    })();
+  </script>
+  <style>
+    .doc-wrap { max-width: 900px; margin: 0 auto; padding: 28px 20px 64px; }
+    .doc-wrap h1 { font-size: 26px; margin: 8px 0 12px; }
+    .doc-wrap h2 { font-size: 18px; margin: 28px 0 10px; color: var(--mint-dark); border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+    .doc-wrap h3 { font-size: 15px; margin: 18px 0 8px; }
+    .doc-wrap p, .doc-wrap li { font-size: 14px; line-height: 1.55; }
+    .doc-wrap pre { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; overflow-x: auto; font-size: 12px; white-space: pre-wrap; }
+    .doc-wrap code { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; }
+    .doc-wrap table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0 16px; }
+    .doc-wrap th, .doc-wrap td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+    .doc-wrap th { background: var(--bg); }
+    .doc-wrap ul { padding-left: 1.2rem; }
+    .doc-wrap a { color: var(--mint-dark); }
+    .doc-wrap hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="nav-logo" href="./">📋 ChieTask</a>
+    <div class="nav-links">
+      <a href="./demo.html" class="btn btn-ghost btn-sm">Demo</a>
+      <a href="./install.html" class="btn btn-ghost btn-sm">Install</a>
+      <a href="./" class="btn btn-primary btn-sm">Home</a>
+    </div>
+  </nav>
+  <article class="doc-wrap">
+<h1>ChieTask — Full Project Documentation</h1>
+<p><strong>Version:</strong> 2.2 (finalized SaaS)  </p>
+<p><strong>Visibility:</strong> Private repository (for personal daily-use testing)  </p>
+<p><strong>Stack:</strong> FastAPI · SQLAlchemy · SQLite · Vanilla JS frontend · Docker  </p>
+<p>This document describes architecture, features, APIs, data model, configuration, security, and operations for ChieTask.</p>
+<hr>
+<h2>1. Overview</h2>
+<p>ChieTask is a multi-user <strong>Software-as-a-Service task tracker</strong> for office and personal productivity. It evolved from a single-file local app into a multi-tenant product with:</p>
+<ul>
+<li>User registration and JWT authentication  </li>
+<li>Workspace isolation (multi-tenant)  </li>
+<li>Tasks with priorities, categories, due dates, progress, and notes  </li>
+<li>Multi-task timers and a daily work log  </li>
+<li>Plan limits (Free / Pro / Team) with a demo checkout flow  </li>
+<li>Profile management including custom profile photos  </li>
+<li>Themes (Ocean, Aurora, Slate, Sunset) with light and dark modes  </li>
+</ul>
+<p><strong>Primary use case:</strong> Track office work, time spent, and completion status across one or more workspaces.</p>
+<hr>
+<h2>2. Architecture</h2>
+<pre><code>
+Browser (frontend/*.html + css + js)
+
+        │  JWT Bearer token
+
+        ▼
+
+FastAPI (backend/app)
+
+        │
+
+        ├── Auth router        /api/auth/*
+
+        ├── Workspaces router  /api/workspaces/*
+
+        ├── Tasks router       /api/workspaces/{id}/tasks/*
+
+        └── Billing router     /api/billing/*
+
+        │
+
+        ▼
+
+SQLAlchemy ORM → SQLite (default) or Postgres (via DATABASE_URL)
+
+</code></pre>
+<table><thead><tr><th>Layer</th><th>Technology</th><th>Location</th></tr></thead><tbody>
+<tr><td>API</td><td>FastAPI + Uvicorn</td><td><code>backend/app/</code></td></tr>
+<tr><td>ORM / DB</td><td>SQLAlchemy 2.x</td><td><code>backend/app/models.py</code>, <code>database.py</code></td></tr>
+<tr><td>Auth</td><td>bcrypt + JWT (python-jose)</td><td><code>backend/app/auth.py</code></td></tr>
+<tr><td>Frontend</td><td>Static HTML/CSS/JS</td><td><code>frontend/</code></td></tr>
+<tr><td>Process entry</td><td><code>run.py</code>, <code>start.command</code>, Docker</td><td>project root</td></tr>
+</tbody></table>
+<p>The frontend is served by FastAPI as static files (<code>/static/*</code>) and HTML routes (<code>/</code>, <code>/app</code>, <code>/login</code>, etc.).</p>
+<hr>
+<h2>3. Directory map</h2>
+<pre><code>
+task-tracker/
+
+├── backend/
+
+│   ├── app/
+
+│   │   ├── main.py           # App factory, lifespan, static routes
+
+│   │   ├── config.py         # Env, plan limits, prices
+
+│   │   ├── database.py       # Engine, WAL pragmas, schema ensure
+
+│   │   ├── models.py         # User, Workspace, Task, Category, …
+
+│   │   ├── schemas.py        # Pydantic request/response models
+
+│   │   ├── auth.py           # Password hash, JWT, current user
+
+│   │   ├── user_out.py       # User → UserOut with avatar_url
+
+│   │   └── routers/
+
+│   │       ├── auth_routes.py
+
+│   │       ├── workspaces.py
+
+│   │       ├── tasks.py
+
+│   │       └── billing.py
+
+│   ├── tests/                # pytest + TestClient
+
+│   ├── requirements.txt
+
+│   ├── requirements.lock.txt
+
+│   └── seed_demo.py
+
+├── frontend/
+
+│   ├── index.html            # Landing
+
+│   ├── login.html / register.html
+
+│   ├── pricing.html
+
+│   ├── app.html              # Main dashboard
+
+│   ├── checkout.html         # Plan payment dashboard (demo)
+
+│   ├── css/styles.css
+
+│   └── js/api.js, app.js
+
+├── scripts/migrate_legacy.py
+
+├── storage/                  # Runtime DB + avatars (gitignored data)
+
+├── backups/                  # Pre-SaaS original snapshot
+
+├── Dockerfile
+
+├── docker-compose.yml
+
+├── Makefile
+
+├── run.py
+
+├── start.command
+
+├── README.md                 # Quick start
+
+└── DOCUMENTATION.md          # This file
+
+</code></pre>
+<hr>
+<h2>4. Features (user-facing)</h2>
+<h3>4.1 Tasks</h3>
+<ul>
+<li>Create, edit, complete, reopen, delete  </li>
+<li>Priority: urgent, high, normal, low  </li>
+<li>Category (dropdown of all workspace categories + custom)  </li>
+<li>Due date, progress (0–100%), notes  </li>
+<li>Filters: Pending / Done / All, category, priority, search  </li>
+<li>Completing a task stays on the current tab (does not dump the full Done list)</li>
+</ul>
+<h3>4.2 Categories</h3>
+<ul>
+<li>Workspace-scoped  </li>
+<li>Create, rename, recolor, delete (tasks reassigned to General)  </li>
+<li>Auto-create when a new name is used on a task  </li>
+</ul>
+<h3>4.3 Time tracking</h3>
+<ul>
+<li><strong>Multiple timers</strong> can run at once (▶ on each task)  </li>
+<li>Auto-start timer when a task is added  </li>
+<li>Persist every 15s + flush on stop / tab hide / logout  </li>
+<li>Today’s Work Log shows timed + completed work  </li>
+</ul>
+<h3>4.4 Workspaces</h3>
+<ul>
+<li>Personal workspace on register  </li>
+<li>Create more workspaces (plan limits apply)  </li>
+<li>Invite existing users by email (Team plan member limits)  </li>
+</ul>
+<h3>4.5 Plans &amp; billing</h3>
+<table><thead><tr><th>Plan</th><th>Max tasks</th><th>Workspaces</th><th>Members</th><th>Price</th></tr></thead><tbody>
+<tr><td>Free</td><td>100</td><td>1</td><td>1</td><td>$0</td></tr>
+<tr><td>Pro</td><td>5,000</td><td>5</td><td>1</td><td>$9/mo</td></tr>
+<tr><td>Team</td><td>50,000</td><td>20</td><td>25</td><td>$29/mo</td></tr>
+</tbody></table>
+<ul>
+<li>Upgrade to Pro/Team → redirects to <code>/checkout</code> payment dashboard  </li>
+<li>Checkout is <strong>demo mode</strong> by default (<code>BILLING_MODE=demo</code>)  </li>
+<li>Set <code>BILLING_MODE=live</code> to refuse demo confirm until a real PSP is integrated  </li>
+</ul>
+<h3>4.6 Profile</h3>
+<ul>
+<li>Display name, password change  </li>
+<li>Profile photo upload (JPEG/PNG/WebP/GIF, max 2MB) → <code>storage/avatars/</code>  </li>
+</ul>
+<h3>4.7 UI / UX</h3>
+<ul>
+<li>Palettes: Ocean (default), Aurora, Slate, Sunset  </li>
+<li>Light / dark mode with readable contrast  </li>
+<li>Focus mode, keyboard shortcuts (N, F, E, T, /)  </li>
+<li>Responsive layout with mobile sidebar  </li>
+</ul>
+<hr>
+<h2>5. Data model</h2>
+<h3>User</h3>
+<ul>
+<li><code>id</code>, <code>email</code> (unique), <code>name</code>, <code>hashed_password</code>  </li>
+<li><code>plan</code> (<code>free</code> | <code>pro</code> | <code>team</code>)  </li>
+<li><code>avatar_path</code> (relative under <code>storage/</code>)  </li>
+<li><code>is_active</code>, <code>created_at</code>  </li>
+</ul>
+<h3>Workspace</h3>
+<ul>
+<li><code>id</code>, <code>name</code>, <code>slug</code> (unique), <code>owner_id</code>, <code>created_at</code>  </li>
+</ul>
+<h3>WorkspaceMember</h3>
+<ul>
+<li><code>workspace_id</code>, <code>user_id</code>, <code>role</code> (<code>owner</code> | <code>admin</code> | <code>member</code>)  </li>
+</ul>
+<h3>Category</h3>
+<ul>
+<li><code>workspace_id</code>, <code>name</code> (unique per workspace), <code>color</code>  </li>
+</ul>
+<h3>Task</h3>
+<ul>
+<li><code>workspace_id</code>, <code>created_by</code>, <code>text</code>, <code>notes</code>  </li>
+<li><code>completed</code>, <code>progress</code>, <code>category</code>, <code>priority</code>  </li>
+<li><code>due_date</code> (ISO <code>YYYY-MM-DD</code>), <code>time_spent</code> (seconds)  </li>
+<li><code>completed_at</code>, <code>created_at</code>, <code>updated_at</code>  </li>
+</ul>
+<p>Default database: <code>storage/chietask.db</code> (SQLite, WAL mode).</p>
+<hr>
+<h2>6. API reference (summary)</h2>
+<p>All protected routes require:</p>
+<pre><code>
+Authorization: Bearer &lt;access_token&gt;
+
+</code></pre>
+<h3>Auth</h3>
+<table><thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead><tbody>
+<tr><td>POST</td><td><code>/api/auth/register</code></td><td>Register + personal workspace</td></tr>
+<tr><td>POST</td><td><code>/api/auth/login</code></td><td>Login → JWT + user</td></tr>
+<tr><td>GET</td><td><code>/api/auth/me</code></td><td>Current user</td></tr>
+<tr><td>PATCH</td><td><code>/api/auth/me</code></td><td>Update name / password</td></tr>
+<tr><td>POST</td><td><code>/api/auth/me/avatar</code></td><td>Upload avatar (multipart)</td></tr>
+<tr><td>DELETE</td><td><code>/api/auth/me/avatar</code></td><td>Remove avatar</td></tr>
+</tbody></table>
+<h3>Workspaces</h3>
+<table><thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead><tbody>
+<tr><td>GET</td><td><code>/api/workspaces</code></td><td>List mine</td></tr>
+<tr><td>POST</td><td><code>/api/workspaces</code></td><td>Create</td></tr>
+<tr><td>GET</td><td><code>/api/workspaces/{id}/members</code></td><td>Members</td></tr>
+<tr><td>POST</td><td><code>/api/workspaces/{id}/invite</code></td><td>Invite by email</td></tr>
+<tr><td>GET/POST</td><td><code>/api/workspaces/{id}/categories</code></td><td>List / create</td></tr>
+<tr><td>PATCH/DELETE</td><td><code>/api/workspaces/{id}/categories/{cid}</code></td><td>Update / delete</td></tr>
+<tr><td>GET</td><td><code>/api/workspaces/{id}/plan</code></td><td>Usage vs limits</td></tr>
+</tbody></table>
+<h3>Tasks</h3>
+<table><thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead><tbody>
+<tr><td>GET</td><td><code>/api/workspaces/{id}/tasks</code></td><td>List (<code>completed</code>, <code>category</code>, <code>priority</code>, <code>q</code>, due filters)</td></tr>
+<tr><td>POST</td><td><code>/api/workspaces/{id}/tasks</code></td><td>Create</td></tr>
+<tr><td>GET</td><td><code>/api/workspaces/{id}/tasks/stats</code></td><td>Dashboard stats</td></tr>
+<tr><td>GET/PATCH/DELETE</td><td><code>/api/workspaces/{id}/tasks/{tid}</code></td><td>Read / update / delete</td></tr>
+<tr><td>POST</td><td><code>/api/workspaces/{id}/tasks/{tid}/time</code></td><td>Add seconds to timer</td></tr>
+</tbody></table>
+<h3>Billing</h3>
+<table><thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead><tbody>
+<tr><td>GET</td><td><code>/api/billing/plans</code></td><td>Catalog + current plan</td></tr>
+<tr><td>POST</td><td><code>/api/billing/checkout/session</code></td><td>Start paid upgrade session</td></tr>
+<tr><td>GET</td><td><code>/api/billing/checkout/session/{id}</code></td><td>Session details</td></tr>
+<tr><td>POST</td><td><code>/api/billing/checkout/confirm</code></td><td>Confirm demo payment</td></tr>
+<tr><td>POST</td><td><code>/api/billing/upgrade</code></td><td>Free / downgrade only (paid → 402)</td></tr>
+</tbody></table>
+<h3>Health</h3>
+<table><thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead><tbody>
+<tr><td>GET</td><td><code>/api/health</code></td><td><code>{ status, app, version }</code></td></tr>
+</tbody></table>
+<p>Interactive docs: <strong>http://localhost:8765/docs</strong></p>
+<hr>
+<h2>7. Frontend pages</h2>
+<table><thead><tr><th>Path</th><th>File</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>/</code></td><td><code>index.html</code></td><td>Marketing landing</td></tr>
+<tr><td><code>/pricing</code></td><td><code>pricing.html</code></td><td>Plan overview</td></tr>
+<tr><td><code>/register</code></td><td><code>register.html</code></td><td>Sign up</td></tr>
+<tr><td><code>/login</code></td><td><code>login.html</code></td><td>Sign in (<code>?next=</code> supported)</td></tr>
+<tr><td><code>/app</code></td><td><code>app.html</code></td><td>Main application</td></tr>
+<tr><td><code>/checkout</code></td><td><code>checkout.html</code></td><td>Demo subscription payment</td></tr>
+<tr><td><code>/static/*</code></td><td><code>frontend/*</code></td><td>CSS, JS, assets</td></tr>
+<tr><td><code>/media/avatars/*</code></td><td><code>storage/avatars/*</code></td><td>Uploaded avatars</td></tr>
+</tbody></table>
+<p>Client state uses <code>localStorage</code> keys: <code>chie_token</code>, <code>chie_user</code>, <code>chie_workspace</code>, theme keys.</p>
+<hr>
+<h2>8. Configuration</h2>
+<p>Copy <code>.env.example</code> to <code>.env</code> (gitignored):</p>
+<table><thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>SECRET_KEY</code></td><td>Dev fallback</td><td>JWT signing key — <strong>change in production</strong></td></tr>
+<tr><td><code>DATABASE_URL</code></td><td><code>sqlite:///./storage/chietask.db</code></td><td>DB URL</td></tr>
+<tr><td><code>ACCESS_TOKEN_EXPIRE_MINUTES</code></td><td><code>10080</code> (7 days)</td><td>Token lifetime</td></tr>
+<tr><td><code>HOST</code></td><td><code>0.0.0.0</code></td><td>Bind host</td></tr>
+<tr><td><code>PORT</code></td><td><code>8765</code></td><td>Bind port</td></tr>
+<tr><td><code>CORS_ORIGINS</code></td><td><code>*</code></td><td>Comma-separated origins</td></tr>
+<tr><td><code>APP_URL</code></td><td><code>http://localhost:8765</code></td><td>Used for checkout redirect URLs</td></tr>
+<tr><td><code>BILLING_MODE</code></td><td><code>demo</code></td><td><code>demo</code> allows fake checkout; <code>live</code> blocks it</td></tr>
+</tbody></table>
+<hr>
+<h2>9. Dependencies</h2>
+<h3>Runtime (Python 3.10+)</h3>
+<table><thead><tr><th>Package</th><th>Role</th></tr></thead><tbody>
+<tr><td><code>fastapi</code></td><td>Web framework</td></tr>
+<tr><td><code>uvicorn[standard]</code></td><td>ASGI server</td></tr>
+<tr><td><code>sqlalchemy</code></td><td>ORM</td></tr>
+<tr><td><code>python-jose[cryptography]</code></td><td>JWT</td></tr>
+<tr><td><code>bcrypt</code></td><td>Password hashing</td></tr>
+<tr><td><code>python-multipart</code></td><td>File uploads</td></tr>
+<tr><td><code>email-validator</code></td><td>Email validation</td></tr>
+<tr><td><code>pydantic</code> / <code>pydantic-settings</code></td><td>Schemas / settings</td></tr>
+<tr><td><code>python-dotenv</code></td><td>Load <code>.env</code></td></tr>
+</tbody></table>
+<h3>Dev / test</h3>
+<table><thead><tr><th>Package</th><th>Role</th></tr></thead><tbody>
+<tr><td><code>httpx</code></td><td>Test client transport</td></tr>
+<tr><td><code>pytest</code></td><td>Test runner</td></tr>
+</tbody></table>
+<p>Install:</p>
+<pre><code>
+python3 -m venv .venv
+
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+
+pip install -r backend/requirements.txt
+
+</code></pre>
+<p>Or: <code>make install</code></p>
+<p><strong>System requirements:</strong> Python 3.10+, pip, modern browser. Optional: Docker + Docker Compose.</p>
+<hr>
+<h2>10. Running</h2>
+<h3>Local (recommended for daily use)</h3>
+<pre><code>
+make install
+
+make run
+
+# open http://localhost:8765
+
+</code></pre>
+<p>macOS: double-click <code>start.command</code>.</p>
+<h3>Tests</h3>
+<pre><code>
+make test
+
+# or: pytest backend/tests -q
+
+</code></pre>
+<h3>Docker</h3>
+<pre><code>
+docker compose up --build
+
+</code></pre>
+<hr>
+<h2>11. Security notes (current state)</h2>
+<table><thead><tr><th>Topic</th><th>Status</th></tr></thead><tbody>
+<tr><td>Passwords</td><td>bcrypt hashed</td></tr>
+<tr><td>API auth</td><td>JWT Bearer</td></tr>
+<tr><td>Multi-tenant</td><td>Workspace membership checks</td></tr>
+<tr><td>Avatar files</td><td>Server-generated names; path constrained on delete</td></tr>
+<tr><td>Demo checkout</td><td>Not real payments — for UI flow only</td></tr>
+<tr><td>Default <code>SECRET_KEY</code></td><td>Dev only — set a strong secret for any shared deploy</td></tr>
+<tr><td>CORS <code>*</code></td><td>OK for local; restrict for production</td></tr>
+<tr><td>Autofill</td><td>Task composer hardened against card-history autofill</td></tr>
+</tbody></table>
+<p><strong>Before production public launch:</strong> strong secrets, Postgres, TLS, real billing webhooks, rate limits, shorter JWT lifetime / refresh tokens.</p>
+<hr>
+<h2>12. Legacy migration</h2>
+<p>If <code>storage/tasks.json</code> exists and the user table is empty, first startup may import into <code>demo@chietask.app</code> / <code>demo1234</code> (Pro).</p>
+<p>Manual re-import:</p>
+<pre><code>
+python scripts/migrate_legacy.py
+
+python scripts/migrate_legacy.py --force   # careful
+
+</code></pre>
+<p>Pre-SaaS source snapshot: <code>backups/pre-saas-original-2026-07-12/</code>.</p>
+<hr>
+<h2>13. Keyboard shortcuts (app)</h2>
+<table><thead><tr><th>Key</th><th>Action</th></tr></thead><tbody>
+<tr><td><code>N</code></td><td>Focus new task</td></tr>
+<tr><td><code>F</code></td><td>Focus mode</td></tr>
+<tr><td><code>E</code></td><td>Export CSV</td></tr>
+<tr><td><code>T</code></td><td>Toggle light/dark</td></tr>
+<tr><td><code>⇧T</code></td><td>Cycle color palette</td></tr>
+<tr><td><code>/</code></td><td>Focus search</td></tr>
+<tr><td><code>Esc</code></td><td>Close modals / menus</td></tr>
+</tbody></table>
+<hr>
+<h2>14. Roadmap ideas (post daily-use testing)</h2>
+<p>1. Real Stripe/Paddle checkout + webhooks  </p>
+<p>2. Email due-date reminders  </p>
+<p>3. Kanban / drag-and-drop  </p>
+<p>4. Assignees on Team plan  </p>
+<p>5. Activity audit log  </p>
+<p>6. Postgres + automated backups  </p>
+<p>7. Make repository public after confidence from real work usage  </p>
+<hr>
+<h2>15. License</h2>
+<p>Private / internal use unless the repository owner states otherwise.</p>
+<hr>
+<p>*Document maintained with the ChieTask codebase. For a short install guide, see <a href="./README.md">README.md</a>.*</p>
+  </article>
+</body>
+</html>
