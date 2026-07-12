@@ -1,10 +1,11 @@
 # ChieTask — Full Project Documentation
 
 **Version:** 2.2 (finalized SaaS)  
-**Visibility:** Private repository (for personal daily-use testing)  
+**Repository:** https://github.com/ritchegerona/chietask (public)  
+**MSR free web:** https://ritchegerona.github.io/chietask/msr.html  
 **Stack:** FastAPI · SQLAlchemy · SQLite · Vanilla JS frontend · Docker  
 
-This document describes architecture, features, APIs, data model, configuration, security, and operations for ChieTask.
+This document describes architecture, features, APIs, data model, configuration, security, **backups**, and operations for ChieTask.
 
 ---
 
@@ -85,7 +86,9 @@ task-tracker/
 │   └── js/api.js, app.js
 ├── scripts/migrate_legacy.py
 ├── storage/                  # Runtime DB + avatars (gitignored data)
-├── backups/                  # Pre-SaaS original snapshot
+├── backups/
+│   ├── pre-saas-original-2026-07-12/   # Original single-file app
+│   └── saas-working-2026-07-12/        # Verified working multi-user SaaS
 ├── Dockerfile
 ├── docker-compose.yml
 ├── Makefile
@@ -344,7 +347,96 @@ docker compose up --build
 
 ---
 
-## 12. Legacy migration
+## 12. Backups (important)
+
+ChieTask keeps **dated snapshots** under `backups/` so you can roll back the original app or the verified working SaaS at any time. These are also in the GitHub repository.
+
+### 12.1 Working multi-user SaaS (primary restore point)
+
+| Path | Description |
+|------|-------------|
+| `backups/saas-working-2026-07-12/` | Full folder snapshot of the **working SaaS** |
+| `backups/saas-working-2026-07-12.zip` | Same snapshot as a portable zip |
+| `backups/saas-working-2026-07-12/BACKUP_INFO.md` | Restore steps (also summarized below) |
+
+**Verified when created:**
+
+- API tests: **14 passed**  
+- Health: `{"status":"ok","app":"ChieTask","version":"2.2.0"}`  
+- Includes: `backend/`, `frontend/`, `public/` (MSR web), docs, Docker files, `run.py`, and a checkpointed `storage/chietask.db`  
+- Excludes: `.venv/`, `.git/`, secret `.env` files, runtime cache  
+
+#### Restore & run the working SaaS
+
+```bash
+# From project root (or after cloning the repo):
+mkdir -p restore-saas
+cp -R backups/saas-working-2026-07-12/* restore-saas/
+# Or unzip: unzip backups/saas-working-2026-07-12.zip -d restore-saas && mv restore-saas/saas-working-2026-07-12/* restore-saas/
+
+cd restore-saas
+python3 -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r backend/requirements.txt
+
+# Optional: cp .env.example .env  and set a strong SECRET_KEY
+python run.py
+# → http://localhost:8765
+# → http://localhost:8765/docs
+```
+
+**Make / Docker after restore:**
+
+```bash
+make install && make run
+# or
+docker compose up --build
+```
+
+**Tests after restore:**
+
+```bash
+source .venv/bin/activate
+pytest backend/tests -q
+```
+
+### 12.2 Pre-SaaS original (legacy single-file app)
+
+| Path | Description |
+|------|-------------|
+| `backups/pre-saas-original-2026-07-12/` | Original local tracker before SaaS |
+| `backups/pre-saas-original-2026-07-12.zip` | Zip of the same |
+| `BACKUP_INFO.md` inside that folder | Restore for `server.py` + `task_tracker.html` |
+
+Contents include original `server.py`, `task_tracker.html`, `start.command`, and `storage/tasks.json`.
+
+### 12.3 Live data vs backup data
+
+| Location | Role |
+|----------|------|
+| `storage/chietask.db` (project root) | **Live** local SaaS database while you develop/run |
+| `backups/saas-working-2026-07-12/storage/chietask.db` | **Frozen** DB snapshot from backup day |
+| MSR GitHub Pages app | Separate **browser localStorage** per user (not this SQLite file) |
+
+Replacing the live DB with the backup DB will restore accounts/tasks as of the backup date (overwrites current local data).
+
+### 12.4 Creating a new SaaS backup later
+
+```bash
+# From project root, after tests pass:
+DATE=$(date +%Y-%m-%d)
+rsync -a --exclude '.git/' --exclude '.venv/' --exclude '__pycache__/' \
+  --exclude '.pytest_cache/' --exclude 'backups/' \
+  --exclude 'storage/*.db-wal' --exclude 'storage/*.db-shm' \
+  ./ "backups/saas-working-${DATE}/"
+# Then copy/update BACKUP_INFO.md and optionally zip the folder
+```
+
+Always run `pytest backend/tests -q` and hit `/api/health` before relying on a new snapshot.
+
+---
+
+## 13. Legacy migration
 
 If `storage/tasks.json` exists and the user table is empty, first startup may import into `demo@chietask.app` / `demo1234` (Pro).
 
@@ -355,11 +447,11 @@ python scripts/migrate_legacy.py
 python scripts/migrate_legacy.py --force   # careful
 ```
 
-Pre-SaaS source snapshot: `backups/pre-saas-original-2026-07-12/`.
+Pre-SaaS source snapshot: `backups/pre-saas-original-2026-07-12/` (see §12.2).
 
 ---
 
-## 13. Keyboard shortcuts (app)
+## 14. Keyboard shortcuts (app)
 
 | Key | Action |
 |-----|--------|
@@ -373,7 +465,7 @@ Pre-SaaS source snapshot: `backups/pre-saas-original-2026-07-12/`.
 
 ---
 
-## 14. Roadmap ideas (post daily-use testing)
+## 15. Roadmap ideas (post daily-use testing)
 
 1. Real Stripe/Paddle checkout + webhooks  
 2. Email due-date reminders  
@@ -385,10 +477,10 @@ Pre-SaaS source snapshot: `backups/pre-saas-original-2026-07-12/`.
 
 ---
 
-## 15. License
+## 16. License
 
 Private / internal use unless the repository owner states otherwise.
 
 ---
 
-*Document maintained with the ChieTask codebase. For a short install guide, see [README.md](./README.md).*
+*Document maintained with the ChieTask codebase. For a short install guide, see [README.md](./README.md). For backup restore details, see §12 and `backups/*/BACKUP_INFO.md`.*

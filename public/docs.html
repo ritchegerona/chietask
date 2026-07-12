@@ -18,6 +18,7 @@
     .doc-wrap h1 { font-size: 26px; margin: 8px 0 12px; }
     .doc-wrap h2 { font-size: 18px; margin: 28px 0 10px; color: var(--mint-dark); border-bottom: 1px solid var(--border); padding-bottom: 6px; }
     .doc-wrap h3 { font-size: 15px; margin: 18px 0 8px; }
+    .doc-wrap h4 { font-size: 14px; margin: 14px 0 6px; color: var(--text-light); }
     .doc-wrap p, .doc-wrap li { font-size: 14px; line-height: 1.55; }
     .doc-wrap pre { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; overflow-x: auto; font-size: 12px; white-space: pre-wrap; }
     .doc-wrap code { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; }
@@ -33,7 +34,7 @@
   <nav class="nav">
     <a class="nav-logo" href="./">📋 ChieTask</a>
     <div class="nav-links">
-      <a href="./demo.html" class="btn btn-ghost btn-sm">Demo</a>
+      <a href="./login.html" class="btn btn-ghost btn-sm">MSR app</a>
       <a href="./install.html" class="btn btn-ghost btn-sm">Install</a>
       <a href="./" class="btn btn-primary btn-sm">Home</a>
     </div>
@@ -41,9 +42,10 @@
   <article class="doc-wrap">
 <h1>ChieTask — Full Project Documentation</h1>
 <p><strong>Version:</strong> 2.2 (finalized SaaS)  </p>
-<p><strong>Visibility:</strong> Private repository (for personal daily-use testing)  </p>
+<p><strong>Repository:</strong> https://github.com/ritchegerona/chietask (public)  </p>
+<p><strong>MSR free web:</strong> https://ritchegerona.github.io/chietask/msr.html  </p>
 <p><strong>Stack:</strong> FastAPI · SQLAlchemy · SQLite · Vanilla JS frontend · Docker  </p>
-<p>This document describes architecture, features, APIs, data model, configuration, security, and operations for ChieTask.</p>
+<p>This document describes architecture, features, APIs, data model, configuration, security, <strong>backups</strong>, and operations for ChieTask.</p>
 <hr>
 <h2>1. Overview</h2>
 <p>ChieTask is a multi-user <strong>Software-as-a-Service task tracker</strong> for office and personal productivity. It evolved from a single-file local app into a multi-tenant product with:</p>
@@ -154,7 +156,11 @@ task-tracker/
 
 ├── storage/                  # Runtime DB + avatars (gitignored data)
 
-├── backups/                  # Pre-SaaS original snapshot
+├── backups/
+
+│   ├── pre-saas-original-2026-07-12/   # Original single-file app
+
+│   └── saas-working-2026-07-12/        # Verified working multi-user SaaS
 
 ├── Dockerfile
 
@@ -394,7 +400,102 @@ docker compose up --build
 </tbody></table>
 <p><strong>Before production public launch:</strong> strong secrets, Postgres, TLS, real billing webhooks, rate limits, shorter JWT lifetime / refresh tokens.</p>
 <hr>
-<h2>12. Legacy migration</h2>
+<h2>12. Backups (important)</h2>
+<p>ChieTask keeps <strong>dated snapshots</strong> under <code>backups/</code> so you can roll back the original app or the verified working SaaS at any time. These are also in the GitHub repository.</p>
+<h3>12.1 Working multi-user SaaS (primary restore point)</h3>
+<table><thead><tr><th>Path</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>backups/saas-working-2026-07-12/</code></td><td>Full folder snapshot of the <strong>working SaaS</strong></td></tr>
+<tr><td><code>backups/saas-working-2026-07-12.zip</code></td><td>Same snapshot as a portable zip</td></tr>
+<tr><td><code>backups/saas-working-2026-07-12/BACKUP_INFO.md</code></td><td>Restore steps (also summarized below)</td></tr>
+</tbody></table>
+<p><strong>Verified when created:</strong></p>
+<ul>
+<li>API tests: <strong>14 passed</strong>  </li>
+<li>Health: <code>{&quot;status&quot;:&quot;ok&quot;,&quot;app&quot;:&quot;ChieTask&quot;,&quot;version&quot;:&quot;2.2.0&quot;}</code>  </li>
+<li>Includes: <code>backend/</code>, <code>frontend/</code>, <code>public/</code> (MSR web), docs, Docker files, <code>run.py</code>, and a checkpointed <code>storage/chietask.db</code>  </li>
+<li>Excludes: <code>.venv/</code>, <code>.git/</code>, secret <code>.env</code> files, runtime cache  </li>
+</ul>
+<h4>Restore &amp; run the working SaaS</h4>
+<pre><code>
+# From project root (or after cloning the repo):
+
+mkdir -p restore-saas
+
+cp -R backups/saas-working-2026-07-12/* restore-saas/
+
+# Or unzip: unzip backups/saas-working-2026-07-12.zip -d restore-saas &amp;&amp; mv restore-saas/saas-working-2026-07-12/* restore-saas/
+
+
+
+cd restore-saas
+
+python3 -m venv .venv
+
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+
+pip install -r backend/requirements.txt
+
+
+
+# Optional: cp .env.example .env  and set a strong SECRET_KEY
+
+python run.py
+
+# → http://localhost:8765
+
+# → http://localhost:8765/docs
+
+</code></pre>
+<p><strong>Make / Docker after restore:</strong></p>
+<pre><code>
+make install &amp;&amp; make run
+
+# or
+
+docker compose up --build
+
+</code></pre>
+<p><strong>Tests after restore:</strong></p>
+<pre><code>
+source .venv/bin/activate
+
+pytest backend/tests -q
+
+</code></pre>
+<h3>12.2 Pre-SaaS original (legacy single-file app)</h3>
+<table><thead><tr><th>Path</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>backups/pre-saas-original-2026-07-12/</code></td><td>Original local tracker before SaaS</td></tr>
+<tr><td><code>backups/pre-saas-original-2026-07-12.zip</code></td><td>Zip of the same</td></tr>
+<tr><td><code>BACKUP_INFO.md</code> inside that folder</td><td>Restore for <code>server.py</code> + <code>task_tracker.html</code></td></tr>
+</tbody></table>
+<p>Contents include original <code>server.py</code>, <code>task_tracker.html</code>, <code>start.command</code>, and <code>storage/tasks.json</code>.</p>
+<h3>12.3 Live data vs backup data</h3>
+<table><thead><tr><th>Location</th><th>Role</th></tr></thead><tbody>
+<tr><td><code>storage/chietask.db</code> (project root)</td><td><strong>Live</strong> local SaaS database while you develop/run</td></tr>
+<tr><td><code>backups/saas-working-2026-07-12/storage/chietask.db</code></td><td><strong>Frozen</strong> DB snapshot from backup day</td></tr>
+<tr><td>MSR GitHub Pages app</td><td>Separate <strong>browser localStorage</strong> per user (not this SQLite file)</td></tr>
+</tbody></table>
+<p>Replacing the live DB with the backup DB will restore accounts/tasks as of the backup date (overwrites current local data).</p>
+<h3>12.4 Creating a new SaaS backup later</h3>
+<pre><code>
+# From project root, after tests pass:
+
+DATE=$(date +%Y-%m-%d)
+
+rsync -a --exclude &#x27;.git/&#x27; --exclude &#x27;.venv/&#x27; --exclude &#x27;__pycache__/&#x27; \
+
+  --exclude &#x27;.pytest_cache/&#x27; --exclude &#x27;backups/&#x27; \
+
+  --exclude &#x27;storage/*.db-wal&#x27; --exclude &#x27;storage/*.db-shm&#x27; \
+
+  ./ &quot;backups/saas-working-${DATE}/&quot;
+
+# Then copy/update BACKUP_INFO.md and optionally zip the folder
+
+</code></pre>
+<p>Always run <code>pytest backend/tests -q</code> and hit <code>/api/health</code> before relying on a new snapshot.</p>
+<hr>
+<h2>13. Legacy migration</h2>
 <p>If <code>storage/tasks.json</code> exists and the user table is empty, first startup may import into <code>demo@chietask.app</code> / <code>demo1234</code> (Pro).</p>
 <p>Manual re-import:</p>
 <pre><code>
@@ -403,9 +504,9 @@ python scripts/migrate_legacy.py
 python scripts/migrate_legacy.py --force   # careful
 
 </code></pre>
-<p>Pre-SaaS source snapshot: <code>backups/pre-saas-original-2026-07-12/</code>.</p>
+<p>Pre-SaaS source snapshot: <code>backups/pre-saas-original-2026-07-12/</code> (see §12.2).</p>
 <hr>
-<h2>13. Keyboard shortcuts (app)</h2>
+<h2>14. Keyboard shortcuts (app)</h2>
 <table><thead><tr><th>Key</th><th>Action</th></tr></thead><tbody>
 <tr><td><code>N</code></td><td>Focus new task</td></tr>
 <tr><td><code>F</code></td><td>Focus mode</td></tr>
@@ -416,7 +517,7 @@ python scripts/migrate_legacy.py --force   # careful
 <tr><td><code>Esc</code></td><td>Close modals / menus</td></tr>
 </tbody></table>
 <hr>
-<h2>14. Roadmap ideas (post daily-use testing)</h2>
+<h2>15. Roadmap ideas (post daily-use testing)</h2>
 <p>1. Real Stripe/Paddle checkout + webhooks  </p>
 <p>2. Email due-date reminders  </p>
 <p>3. Kanban / drag-and-drop  </p>
@@ -425,10 +526,10 @@ python scripts/migrate_legacy.py --force   # careful
 <p>6. Postgres + automated backups  </p>
 <p>7. Make repository public after confidence from real work usage  </p>
 <hr>
-<h2>15. License</h2>
+<h2>16. License</h2>
 <p>Private / internal use unless the repository owner states otherwise.</p>
 <hr>
-<p>*Document maintained with the ChieTask codebase. For a short install guide, see <a href="./README.md">README.md</a>.*</p>
+<p>*Document maintained with the ChieTask codebase. For a short install guide, see <a href="./README.md">README.md</a>. For backup restore details, see §12 and <code>backups/*/BACKUP_INFO.md</code>.*</p>
   </article>
 </body>
 </html>
