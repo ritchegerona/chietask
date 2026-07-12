@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign up — ChieTask</title>
-  <link rel="stylesheet" href="/static/css/styles.css?v=2.5">
+  <link rel="stylesheet" href="/static/css/styles.css?v=3.1">
   <script>
     (function () {
       var p = localStorage.getItem("chie_palette") || "ocean";
@@ -39,7 +39,11 @@
       <p class="auth-footer">Already have an account? <a href="/login">Log in</a></p>
     </div>
   </div>
-  <script src="/static/js/api.js?v=2.5"></script>
+  <footer class="site-footer">
+    © 2026 <strong>ChieTask</strong> · Built for productive office teams ·
+    <a href="/">Home</a> · <a href="/pricing">Pricing</a>
+  </footer>
+  <script src="/static/js/api.js?v=3.1"></script>
   <script>
     if (API.getToken()) window.location.href = '/app';
 

@@ -250,13 +250,8 @@
     const initial = (user.name || "?").charAt(0).toUpperCase();
     el.replaceChildren();
     const url = user.avatar_url || "";
-    // SaaS server paths or local data: URLs (MSR web edition stores avatars in browser)
-    const ok =
-      url &&
-      typeof url === "string" &&
-      !url.includes("..") &&
-      (url.startsWith("/media/avatars/") || url.startsWith("data:image/"));
-    if (ok) {
+    // Only trust same-origin avatar paths we serve
+    if (url && typeof url === "string" && (url.startsWith("/media/avatars/") || url.startsWith("data:image/")) && !url.includes("..")) {
       el.classList.add("has-photo");
       const img = document.createElement("img");
       img.src = url;
@@ -1126,7 +1121,6 @@
         highlightCurrentPlan(state.user.plan);
         return;
       }
-      // MSR free web edition: upgrades stay free / unlimited — no payment page
       const result = await API.upgradePlan(plan);
       state.user = { ...state.user, ...(result || {}), plan: result?.plan || plan };
       localStorage.setItem(API.userKey, JSON.stringify(state.user));

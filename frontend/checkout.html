@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checkout · ChieTask</title>
-  <link rel="stylesheet" href="/static/css/styles.css?v=2.5">
+  <link rel="stylesheet" href="/static/css/styles.css?v=3.1">
   <style>
     .checkout-wrap {
       min-height: 100vh;
@@ -136,7 +136,12 @@
       </div>
     </div>
   </div>
-  <script src="/static/js/api.js?v=2.5"></script>
+  <footer class="footer" style="position:fixed;left:0;right:0;bottom:0;padding:12px;background:color-mix(in srgb,var(--card) 94%,transparent);">
+    <div class="footer-inner" style="gap:4px;">
+      <div class="footer-meta">© 2026 ChieTask · Secure checkout (demo) · <a href="/app" style="color:var(--mint-dark);font-weight:600;">Back to app</a></div>
+    </div>
+  </footer>
+  <script src="/static/js/api.js?v=3.1"></script>
   <script>
     (function () {
       if (!API.getToken()) {
