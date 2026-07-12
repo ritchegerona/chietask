@@ -1,40 +1,40 @@
 # Share ChieTask with all MSR workmates
 
-## Primary link (no install)
+## Primary link (exact SaaS app · free · no install)
 
 **https://ritchegerona.github.io/chietask/msr.html**
 
+Or go directly to:
+
+- Register: https://ritchegerona.github.io/chietask/register.html  
+- Login: https://ritchegerona.github.io/chietask/login.html  
+- App: https://ritchegerona.github.io/chietask/app.html  
+
 ---
 
-## Message you can paste (Teams / email / chat)
+## Message for Teams / email / chat
 
 ```
 Hi MSR team —
 
-ChieTask is available for all MSR workmates as a pure web tool (no install, no account):
+ChieTask (same full task tracker as our SaaS app) is free for all MSR workmates in the browser — no install:
 
 👉 https://ritchegerona.github.io/chietask/msr.html
 
-• Your tasks are private to YOU — saved only in your browser on your device
-• Use “Save backup file” to keep a personal copy on your computer / OneDrive
-• Add tasks, priorities, timers, dark mode, CSV export
+1. Create a free account (first time)
+2. Use the full dashboard: tasks, multi-timers, categories, workspaces, themes
+3. Your tasks stay on YOUR browser / device only (not shared to a company server from this page)
 
 Bookmark the link for daily use.
 ```
 
 ---
 
-## Privacy / storage
+## Privacy
 
 | | |
 |--|--|
-| Where tasks are stored | **Your browser only** (localStorage on your PC/phone) |
-| Shared with other MSR staff? | **No** — each person has their own list on their device |
-| Backup | **Save backup file** → JSON on your disk / OneDrive / USB |
-| Restore | **Restore from file** on the same or another browser |
-
----
-
-## Full multi-user SaaS (optional later)
-
-Shared server accounts: https://ritchegerona.github.io/chietask/install.html
+| Cost | **Free for MSR** |
+| Install | **None** |
+| Data | Saved in **your browser** on **your device** |
+| Shared with others? | **No** (unless you use the same browser profile) |

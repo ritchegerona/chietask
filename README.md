@@ -7,25 +7,24 @@ Multi-user task tracker for office teams and personal productivity: auth, worksp
 | | |
 |--|--|
 | **GitHub Pages home** | https://ritchegerona.github.io/chietask/ |
-| **🏢 MSR workmates (pure web, no install)** | https://ritchegerona.github.io/chietask/msr.html |
-| **Same app (alternate URL)** | https://ritchegerona.github.io/chietask/team.html |
-| **Sandbox demo** | https://ritchegerona.github.io/chietask/demo.html |
+| **🏢 MSR full SaaS app (free, no install)** | https://ritchegerona.github.io/chietask/msr.html |
+| **Register** | https://ritchegerona.github.io/chietask/register.html |
+| **Login** | https://ritchegerona.github.io/chietask/login.html |
+| **App dashboard** | https://ritchegerona.github.io/chietask/app.html |
 | **Docs** | https://ritchegerona.github.io/chietask/docs.html |
-| **Install full multi-user SaaS** | https://ritchegerona.github.io/chietask/install.html |
+| **Install server SaaS** | https://ritchegerona.github.io/chietask/install.html |
 | **Source repo** | https://github.com/ritchegerona/chietask |
-| **Copy-paste share text** | [public/SHARE.md](./public/SHARE.md) |
+| **Share text** | [public/SHARE.md](./public/SHARE.md) |
 
-### Share with all MSR workmates (recommended)
+### Share with all MSR workmates
 
-Send this link company-wide — open in a browser, **no install**:
+Exact copy of the working SaaS tracker UI (tasks, multi-timers, categories, workspaces, settings, themes) — **free for MSR**, pure web:
 
 ```
 https://ritchegerona.github.io/chietask/msr.html
 ```
 
-Ready-to-paste Teams/email text: see [public/SHARE.md](./public/SHARE.md).
-
-Tasks save in each person’s browser on that device. For shared server accounts/workspaces later, use the full SaaS install.
+Each workmate creates an account in their browser; tasks stay on **their device only**.
 **Full documentation (in repo):** [DOCUMENTATION.md](./DOCUMENTATION.md)
 ---
 
