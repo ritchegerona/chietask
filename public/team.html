@@ -111,9 +111,15 @@
     </div>
   </div>
   <div style="background:color-mix(in srgb,var(--mint) 14%,var(--card));border-bottom:1px solid var(--border);padding:10px 18px;font-size:13px;color:var(--text);text-align:center;line-height:1.45;">
-    <strong>MSR workmates — open anytime (no install):</strong><br>
+    <strong>MSR workmates — personal web app (no install):</strong><br>
     <a href="https://ritchegerona.github.io/chietask/msr.html" style="color:var(--mint-dark);font-weight:800;word-break:break-all;">https://ritchegerona.github.io/chietask/msr.html</a>
-    · Bookmark for daily use
+    · Your tasks stay on <strong>your browser / your device only</strong>
+  </div>
+  <div id="storageBanner" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;padding:8px 16px;font-size:12px;background:var(--card);border-bottom:1px solid var(--border);color:var(--text);">
+    <span>🔒 Personal storage:</span>
+    <strong id="ownerLabel">…</strong>
+    <span id="saveStatus" style="color:var(--mint-dark);font-weight:700;">Saved on this device</span>
+    <button type="button" class="btn btn-ghost btn-sm" id="btnChangeOwner" style="padding:4px 10px;font-size:11px;">Change name</button>
   </div>
 
   <div class="demo-layout">
@@ -162,15 +168,29 @@
       <div class="stat"><span>Live timers</span><strong id="statLive">0</strong></div>
       <h3 style="margin-top:18px;">Work log</h3>
       <div id="workLog"></div>
-      <button type="button" class="btn btn-ghost btn-sm" id="btnExport" style="margin-top:14px;width:100%;">Export CSV</button>
-      <button type="button" class="btn btn-ghost btn-sm" id="btnClearDone" style="margin-top:8px;width:100%;">Clear completed</button>
+      <h3 style="margin-top:18px;">My personal data</h3>
+      <p style="font-size:11px;color:var(--text-light);line-height:1.4;margin:0 0 10px;">
+        Tasks are private to you on this browser. Nothing is uploaded to a server.
+        Use backup to save a file on your computer/drive.
+      </p>
+      <button type="button" class="btn btn-primary btn-sm" id="btnBackup" style="width:100%;margin-bottom:8px;">💾 Save backup file</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btnRestore" style="width:100%;margin-bottom:8px;">📂 Restore from file</button>
+      <input type="file" id="restoreFile" accept="application/json,.json" hidden>
+      <button type="button" class="btn btn-ghost btn-sm" id="btnExport" style="width:100%;margin-bottom:8px;">Export CSV</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btnClearDone" style="width:100%;">Clear completed</button>
     </aside>
   </div>
 
   <script>
 (function () {
-  // Separate storage from demo.html so teammate page data is dedicated
-  const KEY = "chietask_msr_web_v1";
+  /**
+   * PERSONAL STORAGE (this browser + this device only)
+   * - Each person is identified by a local profile name + stable device id
+   * - Tasks never go to a shared server from this page
+   * - Optional JSON backup file for their own disk / OneDrive / USB
+   */
+  const PROFILE_KEY = "chietask_msr_profile_v1";
+  const LEGACY_KEY = "chietask_msr_web_v1";
   const DEFAULT_CATS = [
     { name: "General", color: "#4f8cff" },
     { name: "Meetings", color: "#89c4e8" },
@@ -179,6 +199,7 @@
     { name: "Client", color: "#e895a8" },
   ];
   const state = {
+    profile: { id: "", name: "", updatedAt: null },
     tasks: [],
     categories: [],
     view: "pending",
@@ -189,23 +210,156 @@
     timerInterval: null,
   };
 
+  function storageKey() {
+    return "chietask_msr_personal_" + (state.profile.id || "anonymous");
+  }
+
+  function setSaveStatus(msg, ok) {
+    const el = document.getElementById("saveStatus");
+    if (!el) return;
+    el.textContent = msg;
+    el.style.color = ok === false ? "var(--danger,#e05555)" : "var(--mint-dark)";
+  }
+
+  function ensureProfile() {
+    let p = null;
+    try { p = JSON.parse(localStorage.getItem(PROFILE_KEY) || "null"); } catch (_) {}
+    if (!p || !p.id) {
+      let name = "";
+      try {
+        name = (prompt("Welcome to ChieTask for MSR.\n\nEnter your name so your tasks stay private to you on this browser:", "") || "").trim();
+      } catch (_) {}
+      if (!name) name = "MSR Workmate";
+      p = {
+        id: "u_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10),
+        name: name.slice(0, 80),
+        createdAt: new Date().toISOString(),
+      };
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
+    }
+    state.profile = p;
+    const label = document.getElementById("ownerLabel");
+    if (label) label.textContent = p.name + " · this device only";
+  }
+
+  function changeOwnerName() {
+    const next = (prompt("Your display name (tasks stay on this browser only):", state.profile.name || "") || "").trim();
+    if (!next) return;
+    state.profile.name = next.slice(0, 80);
+    state.profile.updatedAt = new Date().toISOString();
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(state.profile));
+    const label = document.getElementById("ownerLabel");
+    if (label) label.textContent = state.profile.name + " · this device only";
+    save(true);
+  }
+
   function load() {
-    try {
-      const raw = JSON.parse(localStorage.getItem(KEY) || "null");
-      if (raw && Array.isArray(raw.tasks)) {
-        state.tasks = raw.tasks;
-        state.categories = raw.categories && raw.categories.length ? raw.categories : DEFAULT_CATS.slice();
-        return;
-      }
-    } catch (_) {}
+    ensureProfile();
+    let raw = null;
+    try { raw = JSON.parse(localStorage.getItem(storageKey()) || "null"); } catch (_) {}
+    // One-time migrate legacy shared key into this personal profile
+    if (!raw) {
+      try {
+        const legacy = JSON.parse(localStorage.getItem(LEGACY_KEY) || "null");
+        if (legacy && Array.isArray(legacy.tasks) && legacy.tasks.length) {
+          raw = legacy;
+          localStorage.setItem(storageKey(), JSON.stringify({
+            ownerId: state.profile.id,
+            ownerName: state.profile.name,
+            tasks: legacy.tasks,
+            categories: legacy.categories || DEFAULT_CATS.slice(),
+            savedAt: new Date().toISOString(),
+            version: 1,
+          }));
+        }
+      } catch (_) {}
+    }
+    if (raw && Array.isArray(raw.tasks)) {
+      state.tasks = raw.tasks;
+      state.categories = raw.categories && raw.categories.length ? raw.categories : DEFAULT_CATS.slice();
+      setSaveStatus("Loaded " + state.tasks.length + " personal task(s) from this browser", true);
+      return;
+    }
     state.categories = DEFAULT_CATS.slice();
     state.tasks = [];
+    setSaveStatus("New personal workspace on this device", true);
   }
-  function save() {
-    localStorage.setItem(KEY, JSON.stringify({
+
+  function save(forceStatus) {
+    const payload = {
+      ownerId: state.profile.id,
+      ownerName: state.profile.name,
       tasks: state.tasks,
       categories: state.categories,
-    }));
+      savedAt: new Date().toISOString(),
+      version: 1,
+      source: "chietask-msr-web",
+    };
+    try {
+      const json = JSON.stringify(payload);
+      localStorage.setItem(storageKey(), json);
+      // Mirror profile index for recovery
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(state.profile));
+      // Secondary copy (survives some browser edge cases)
+      try { sessionStorage.setItem(storageKey() + "_mirror", json); } catch (_) {}
+      if (forceStatus !== false) {
+        const t = new Date();
+        setSaveStatus(
+          "Saved on this device · " +
+            String(t.getHours()).padStart(2, "0") + ":" +
+            String(t.getMinutes()).padStart(2, "0") + ":" +
+            String(t.getSeconds()).padStart(2, "0"),
+          true
+        );
+      }
+      return true;
+    } catch (e) {
+      setSaveStatus("Could not save (storage full or blocked). Use backup file.", false);
+      console.error(e);
+      return false;
+    }
+  }
+
+  function downloadBackup() {
+    save(true);
+    const payload = {
+      ownerId: state.profile.id,
+      ownerName: state.profile.name,
+      tasks: state.tasks,
+      categories: state.categories,
+      exportedAt: new Date().toISOString(),
+      version: 1,
+      source: "chietask-msr-web",
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    const safeName = (state.profile.name || "msr").replace(/[^\w\-]+/g, "_").slice(0, 40);
+    a.href = URL.createObjectURL(blob);
+    a.download = "chietask-" + safeName + "-backup-" + localDay() + ".json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setSaveStatus("Backup file downloaded to your computer", true);
+  }
+
+  function restoreFromFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!data || !Array.isArray(data.tasks)) throw new Error("Invalid backup file");
+        if (!confirm("Replace your current personal tasks on this browser with the backup file?")) return;
+        state.tasks = data.tasks;
+        state.categories = Array.isArray(data.categories) && data.categories.length ? data.categories : DEFAULT_CATS.slice();
+        if (data.ownerName && !state.profile.name) state.profile.name = data.ownerName;
+        save(true);
+        render();
+        setSaveStatus("Restored personal backup into this browser", true);
+      } catch (e) {
+        alert("Could not restore backup: " + (e.message || e));
+      }
+    };
+    reader.readAsText(file);
   }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function esc(s) {
@@ -474,23 +628,44 @@
     localStorage.setItem("chie_theme", next);
   });
   document.getElementById("btnExport").addEventListener("click", () => {
-    const rows = [["Task","Category","Priority","Status","Time","Due"]];
+    save(true);
+    const rows = [["Owner","Task","Category","Priority","Status","Time","Due"]];
     state.tasks.forEach((t) => rows.push([
-      t.text, t.category, t.priority, t.completed?"Done":"Pending", formatTime(t.time_spent||0), t.due_date||""
+      state.profile.name || "", t.text, t.category, t.priority, t.completed?"Done":"Pending", formatTime(t.time_spent||0), t.due_date||""
     ]));
     const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
     const a = document.createElement("a");
+    const safeName = (state.profile.name || "msr").replace(/[^\w\-]+/g, "_").slice(0, 40);
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    a.download = `chietask-demo-${localDay()}.csv`;
+    a.download = "chietask-" + safeName + "-" + localDay() + ".csv";
     a.click();
+    setSaveStatus("CSV saved to your downloads folder", true);
   });
   document.getElementById("btnClearDone").addEventListener("click", () => {
-    if (!confirm("Remove all completed tasks from this browser?")) return;
+    if (!confirm("Remove all completed tasks from YOUR personal list on this browser?")) return;
     state.tasks = state.tasks.filter((t) => !t.completed);
-    save();
+    save(true);
     render();
   });
-  window.addEventListener("beforeunload", () => save());
+  document.getElementById("btnBackup").addEventListener("click", downloadBackup);
+  document.getElementById("btnRestore").addEventListener("click", () => {
+    document.getElementById("restoreFile").click();
+  });
+  document.getElementById("restoreFile").addEventListener("change", (e) => {
+    const f = e.target.files && e.target.files[0];
+    restoreFromFile(f);
+    e.target.value = "";
+  });
+  document.getElementById("btnChangeOwner").addEventListener("click", changeOwnerName);
+
+  // Persist personal data aggressively on this device
+  window.addEventListener("beforeunload", () => save(false));
+  window.addEventListener("pagehide", () => save(false));
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") save(false);
+  });
+  // Periodic autosave while timers run / idle
+  setInterval(() => save(false), 15000);
 
   // sync body attrs for CSS
   document.body.setAttribute("data-palette", document.documentElement.getAttribute("data-palette") || "ocean");
@@ -498,6 +673,7 @@
 
   load();
   render();
+  save(true);
 })();
   </script>
 </body>

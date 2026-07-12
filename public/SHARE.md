@@ -1,11 +1,8 @@
-# Share ChieTask with MSR workmates
+# Share ChieTask with all MSR workmates
 
 ## Primary link (no install)
 
 **https://ritchegerona.github.io/chietask/msr.html**
-
-Same app also available at:  
-https://ritchegerona.github.io/chietask/team.html
 
 ---
 
@@ -14,34 +11,30 @@ https://ritchegerona.github.io/chietask/team.html
 ```
 Hi MSR team —
 
-ChieTask is available for all workmates as a pure web tool (no install, no account):
+ChieTask is available for all MSR workmates as a pure web tool (no install, no account):
 
 👉 https://ritchegerona.github.io/chietask/msr.html
 
-• Add tasks, priorities, categories, due dates
-• Run timers (multiple at once)
-• Dark mode + CSV export
-• Data stays in your browser on this device — bookmark the link
+• Your tasks are private to YOU — saved only in your browser on your device
+• Use “Save backup file” to keep a personal copy on your computer / OneDrive
+• Add tasks, priorities, timers, dark mode, CSV export
 
-Home & docs: https://ritchegerona.github.io/chietask/
+Bookmark the link for daily use.
 ```
 
 ---
 
-## What to expect
+## Privacy / storage
 
-| Item | Detail |
-|------|--------|
-| Who can use it | Anyone with the link (MSR workmates) |
-| Install required? | **No** — browser only |
-| Account? | **No** |
-| Where data lives | Each person’s browser (localStorage) |
-| Best browser | Chrome, Edge, Firefox, or Safari |
-| Tip | Use the same browser/device daily so tasks stay saved |
+| | |
+|--|--|
+| Where tasks are stored | **Your browser only** (localStorage on your PC/phone) |
+| Shared with other MSR staff? | **No** — each person has their own list on their device |
+| Backup | **Save backup file** → JSON on your disk / OneDrive / USB |
+| Restore | **Restore from file** on the same or another browser |
 
 ---
 
-## Full multi-user SaaS (optional, for later)
+## Full multi-user SaaS (optional later)
 
-If we later want shared server accounts and workspaces (login, multi-device sync), that version is in the repo and runs with Python/Docker:  
-https://ritchegerona.github.io/chietask/install.html
+Shared server accounts: https://ritchegerona.github.io/chietask/install.html
